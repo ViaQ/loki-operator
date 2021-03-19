@@ -7,34 +7,52 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
-    name: go test
+  lint:
+    name: lint
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         go: ['1.16']
-
     steps:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go }}
       id: go
-
     - uses: actions/checkout@v2
+    - name: Lint
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: v1.32
+        args: --timeout=2m
 
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ['1.16']
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go }}
+      id: go
+    - uses: actions/checkout@v2
     - name: Lint
       uses: golangci/golangci-lint-action@v2
       with:
         version: v1.32
         args: --timeout=5m
-
-    - name: Test
-      run: go test -v -coverprofile=.coverprofile .
-
-    - name: Report coveralls.io
-      uses: shogo82148/actions-goveralls@v1
+    - name: Run tests
+      run: |
+        go test -v -covermode=count -coverprofile=coverage.out
+    - name: Convert coverage.out to coverage.lcov
+      uses: jandelgado/gcov2lcov-action@v1.0.6
+    - name: Coveralls
+      uses: coverallsapp/github-action@v1.1.2
       with:
-        path-to-profile: .coverprofile
-        flag-name: Go-${{ matrix.go }}
+          github-token: ${{ secrets.github_token }}
+          path-to-lcov: coverage.lcov
