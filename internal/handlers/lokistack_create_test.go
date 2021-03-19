@@ -56,7 +56,7 @@ func TestCreateLokiStack_WhenGetReturnsNotFound_DoesNotError(t *testing.T) {
 	err := handlers.CreateLokiStack(context.TODO(), r, k)
 	require.NoError(t, err)
 
-	// make sure create was called
+	// make sure create was NOT called because the Get failed
 	require.Zero(t, k.CreateCallCount())
 }
 
