@@ -41,18 +41,10 @@ jobs:
         go-version: ${{ matrix.go }}
       id: go
     - uses: actions/checkout@v2
-    - name: Lint
-      uses: golangci/golangci-lint-action@v2
-      with:
-        version: v1.32
-        args: --timeout=5m
     - name: Run tests
-      run: |
-        go test -v -covermode=count -coverprofile=coverage.out
-    - name: Convert coverage.out to coverage.lcov
-      uses: jandelgado/gcov2lcov-action@v1.0.6
-    - name: Coveralls
-      uses: coverallsapp/github-action@v1.1.2
+      run: go test -v -coverprofile=profile.cov ./...
+    - name: Send coverage
+      uses: shogo82148/actions-goveralls@v1
       with:
-          github-token: ${{ secrets.github_token }}
-          path-to-lcov: coverage.lcov
+        path-to-profile: profile.cov
+        flag-name: Go-${{ matrix.go }}
