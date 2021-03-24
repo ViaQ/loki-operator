@@ -14,35 +14,29 @@ import (
 )
 
 // Define the manifest options here as structured objects
-type Config struct {
-	Name         string
-	Namespace    string
-	Replicas     int `yaml:"replicas"`
-	printVersion bool
-	verifyConfig bool
-	configFile   string
-	writeToDir   string
+type config struct {
+	Name       string
+	Namespace  string
+	Replicas   int `yaml:"replicas"`
+	writeToDir string
 }
 
-func (c *Config) RegisterFlags(f *flag.FlagSet) {
+func (c *config) registerFlags(f *flag.FlagSet) {
 	f.StringVar(&c.Name, "name", "", "the name of the stack")
 	f.StringVar(&c.Namespace, "namespace", "", "Namespace to deploy to")
-	f.BoolVar(&c.printVersion, "version", false, "Print this builds version information")
-	f.BoolVar(&c.verifyConfig, "verify-config", false, "Verify config file and exits")
-	f.StringVar(&c.configFile, "config.file", "", "yaml file to load")
 	f.StringVar(&c.writeToDir, "output.write-dir", "", "write each file to the specified directory")
 }
 
-var cfg *Config
+var cfg *config
 
 func init() {
 	log.Init("loki-broker")
-	cfg = &Config{}
+	cfg = &config{}
 }
 
 func main() {
 	f := flag.NewFlagSet("", flag.ExitOnError)
-	cfg.RegisterFlags(f)
+	cfg.registerFlags(f)
 	if err := f.Parse(os.Args[1:]); err != nil {
 		log.Error(err, "failed to parse flags")
 	}
@@ -52,7 +46,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Convert Config to manifest.Options
+	// Convert config to manifest.Options
 	opts := manifests.Options{
 		Name:      cfg.Name,
 		Namespace: cfg.Namespace,
