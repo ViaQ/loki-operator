@@ -38,7 +38,7 @@ jobs:
         go: ['1.16']
     steps:
     - name: Install make
-      run: apt-get install make
+      run: sudo apt-get install make
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
@@ -58,7 +58,7 @@ jobs:
         go: ['1.16']
     steps:
     - name: Install make
-      run: apt-get install make
+      run: sudo apt-get install make
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
