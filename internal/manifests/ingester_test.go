@@ -18,8 +18,10 @@ func TestNewIngesterStatefulSet_SelectorMatchesLabels(t *testing.T) {
 		Name:      "abcd",
 		Namespace: "efgh",
 		Ingester: manifests.Ingester{
-			StorageClassName: "standard",
-			StorageSize:      "1Gi",
+			Storage: manifests.Storage{
+				ClassName:     "standard",
+				SizeRequested: "1Gi",
+			},
 		},
 	})
 	require.NoError(t, err)

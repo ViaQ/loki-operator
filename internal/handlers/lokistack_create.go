@@ -34,8 +34,10 @@ func CreateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client) error 
 		Name:      req.Name,
 		Namespace: req.Namespace,
 		Ingester: manifests.Ingester{
-			StorageClassName: stack.Spec.Ingester.StorageClassName,
-			StorageSize:      stack.Spec.Ingester.StorageSize,
+			Storage: manifests.Storage{
+				ClassName:     stack.Spec.Ingester.StorageClassName,
+				SizeRequested: stack.Spec.Ingester.StorageSize,
+			},
 		},
 	}
 

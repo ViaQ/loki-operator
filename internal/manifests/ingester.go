@@ -118,7 +118,7 @@ func NewIngesterStatefulSet(opts Options) (*apps.StatefulSet, error) {
 
 	ingesterLabels := ComponentLabels("ingester", opts.Name)
 
-	storageRequests, err := resource.ParseQuantity(opts.Ingester.StorageSize)
+	storageRequests, err := resource.ParseQuantity(opts.Ingester.Storage.SizeRequested)
 	if err != nil {
 		return nil, kverrors.Wrap(err, "failed to parse quantity specified in Options", "field", "Ingester.StorageClass")
 	}
@@ -133,9 +133,9 @@ func NewIngesterStatefulSet(opts Options) (*apps.StatefulSet, error) {
 			Labels: ingesterLabels,
 		},
 		Spec: apps.StatefulSetSpec{
-			PodManagementPolicy: apps.OrderedReadyPodManagement,
+			PodManagementPolicy:  apps.OrderedReadyPodManagement,
 			RevisionHistoryLimit: pointer.Int32Ptr(10),
-			Replicas: pointer.Int32Ptr(int32(3)),
+			Replicas:             pointer.Int32Ptr(int32(3)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels.Merge(ingesterLabels, GossipLabels()),
 			},
@@ -150,7 +150,7 @@ func NewIngesterStatefulSet(opts Options) (*apps.StatefulSet, error) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Labels: ingesterLabels,
-						Name: storageVolumeName,
+						Name:   storageVolumeName,
 					},
 					Spec: core.PersistentVolumeClaimSpec{
 						AccessModes: []core.PersistentVolumeAccessMode{
@@ -162,7 +162,7 @@ func NewIngesterStatefulSet(opts Options) (*apps.StatefulSet, error) {
 								core.ResourceStorage: storageRequests,
 							},
 						},
-						StorageClassName: pointer.StringPtr(opts.Ingester.StorageClassName),
+						StorageClassName: pointer.StringPtr(opts.Ingester.Storage.ClassName),
 					},
 				},
 			},

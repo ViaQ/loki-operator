@@ -32,6 +32,7 @@ type LokiStackSpec struct {
 	Ingester Ingester `json:"ingester,omitempty"`
 }
 
+// Ingester sets options for the ingester component
 type Ingester struct {
 	StorageClassName string `json:"storageClassName,omitempty"`
 	StorageSize      string `json:"storageSize,omitempty"`

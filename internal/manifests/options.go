@@ -8,10 +8,21 @@ type Options struct {
 	Namespace string
 
 	Ingester Ingester `default:"{}"`
+	Querier  Querier  `default:"{}"`
+}
+
+// Storage defines PVC settings for StatefulSets
+type Storage struct {
+	ClassName     string `default:"-"`
+	SizeRequested string `default:"10Gi"`
+}
+
+// Querier is options for the Querier
+type Querier struct {
+	Storage Storage
 }
 
 // Ingester is options for the Ingester
 type Ingester struct {
-	StorageClassName string `default:"-"`
-	StorageSize      string `default:"10Gi"`
+	Storage Storage
 }

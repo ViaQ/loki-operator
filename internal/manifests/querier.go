@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/ViaQ/logerr/kverrors"
 	"github.com/ViaQ/loki-operator/internal/manifests/internal/config"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -15,16 +17,21 @@ import (
 )
 
 // BuildQuerier returns a list of k8s objects for Loki Querier
-func BuildQuerier(stackName string) []client.Object {
-	return []client.Object{
-		NewQuerierDeployment(stackName),
-		NewQuerierGRPCService(stackName),
-		NewQuerierHTTPService(stackName),
+func BuildQuerier(opts Options) ([]client.Object, error) {
+	ss, err := NewQuerierStatefulSet(opts)
+	if err != nil {
+		return nil, err
 	}
+
+	return []client.Object{
+		ss,
+		NewQuerierGRPCService(opts.Name),
+		NewQuerierHTTPService(opts.Name),
+	}, nil
 }
 
-// NewQuerierDeployment creates a deployment object for a querier
-func NewQuerierDeployment(stackName string) *apps.Deployment {
+// NewQuerierStatefulSet creates a deployment object for a querier
+func NewQuerierStatefulSet(opts Options) (*apps.StatefulSet, error) {
 	podSpec := core.PodSpec{
 		Volumes: []core.Volume{
 			{
@@ -32,15 +39,9 @@ func NewQuerierDeployment(stackName string) *apps.Deployment {
 				VolumeSource: core.VolumeSource{
 					ConfigMap: &core.ConfigMapVolumeSource{
 						LocalObjectReference: core.LocalObjectReference{
-							Name: lokiConfigMapName(stackName),
+							Name: lokiConfigMapName(opts.Name),
 						},
 					},
-				},
-			},
-			{
-				Name: storageVolumeName,
-				VolumeSource: core.VolumeSource{
-					EmptyDir: &core.EmptyDirVolumeSource{},
 				},
 			},
 		},
@@ -115,34 +116,57 @@ func NewQuerierDeployment(stackName string) *apps.Deployment {
 		},
 	}
 
-	l := ComponentLabels("querier", stackName)
+	l := ComponentLabels("querier", opts.Name)
+	storageRequests, err := resource.ParseQuantity(opts.Ingester.Storage.SizeRequested)
+	if err != nil {
+		return nil, kverrors.Wrap(err, "failed to parse quantity specified in Options", "field", "Ingester.StorageClass")
+	}
 
-	return &apps.Deployment{
+	return &apps.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "Deployment",
+			Kind:       "StatefulSet",
 			APIVersion: apps.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   fmt.Sprintf("loki-querier-%s", stackName),
+			Name:   fmt.Sprintf("loki-querier-%s", opts.Name),
 			Labels: l,
 		},
-		Spec: apps.DeploymentSpec{
-			Replicas: pointer.Int32Ptr(int32(3)),
+		Spec: apps.StatefulSetSpec{
+			PodManagementPolicy:  apps.OrderedReadyPodManagement,
+			RevisionHistoryLimit: pointer.Int32Ptr(10),
+			Replicas:             pointer.Int32Ptr(int32(3)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels.Merge(l, GossipLabels()),
 			},
 			Template: core.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:   fmt.Sprintf("loki-querier-%s", stackName),
+					Name:   fmt.Sprintf("loki-querier-%s", opts.Name),
 					Labels: labels.Merge(l, GossipLabels()),
 				},
 				Spec: podSpec,
 			},
-			Strategy: apps.DeploymentStrategy{
-				Type: apps.RollingUpdateDeploymentStrategyType,
+			VolumeClaimTemplates: []core.PersistentVolumeClaim{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: l,
+						Name:   storageVolumeName,
+					},
+					Spec: core.PersistentVolumeClaimSpec{
+						AccessModes: []core.PersistentVolumeAccessMode{
+							// TODO: should we verify that this is possible with the given storage class first?
+							core.ReadWriteOnce,
+						},
+						Resources: core.ResourceRequirements{
+							Requests: map[core.ResourceName]resource.Quantity{
+								core.ResourceStorage: storageRequests,
+							},
+						},
+						StorageClassName: pointer.StringPtr(opts.Querier.Storage.ClassName),
+					},
+				},
 			},
 		},
-	}
+	}, nil
 }
 
 // NewQuerierGRPCService creates a k8s service for the querier GRPC endpoint
