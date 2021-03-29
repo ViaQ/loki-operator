@@ -29,7 +29,12 @@ type LokiStackSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Name is the unique name of this LokiStack.
-	Name string `json:"name,omitempty"`
+	Ingester Ingester `json:"ingester,omitempty"`
+}
+
+type Ingester struct {
+	StorageClassName string `json:"storageClassName,omitempty"`
+	StorageSize      string `json:"storageSize,omitempty"`
 }
 
 // LokiStackStatus defines the observed state of LokiStack

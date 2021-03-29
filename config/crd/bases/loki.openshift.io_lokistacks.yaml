@@ -36,9 +36,14 @@ spec:
           spec:
             description: LokiStackSpec defines the desired state of LokiStack
             properties:
-              name:
-                description: Name is the unique name of this LokiStack.
-                type: string
+              ingester:
+                description: ingester configuration options
+                properties:
+                  storageClassName:
+                    type: string
+                  storageSize:
+                    type: string
+                type: object
             type: object
           status:
             description: LokiStackStatus defines the observed state of LokiStack

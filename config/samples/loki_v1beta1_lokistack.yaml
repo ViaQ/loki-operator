@@ -4,4 +4,6 @@ metadata:
   name: lokistack-sample
 spec:
   # Add fields here
-  name: mystack
+  ingester:
+    storageClassName: "standard" # this is the default for KiND
+    storageSize: "2Gi"

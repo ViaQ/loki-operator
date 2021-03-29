@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/ViaQ/logerr/kverrors"
 	"github.com/ViaQ/loki-operator/internal/manifests/internal/config"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -15,16 +17,21 @@ import (
 )
 
 // BuildIngester builds the k8s objects required to run Loki Ingester
-func BuildIngester(stackName string) []client.Object {
-	return []client.Object{
-		NewIngesterDeployment(stackName),
-		NewIngesterGRPCService(stackName),
-		NewIngesterHTTPService(stackName),
+func BuildIngester(opts Options) ([]client.Object, error) {
+	ss, err := NewIngesterStatefulSet(opts)
+	if err != nil {
+		return nil, err
 	}
+
+	return []client.Object{
+		ss,
+		NewIngesterGRPCService(opts),
+		NewIngesterHTTPService(opts),
+	}, nil
 }
 
-// NewIngesterDeployment creates a deployment object for an ingester
-func NewIngesterDeployment(stackName string) *apps.Deployment {
+// NewIngesterStatefulSet creates a deployment object for an ingester
+func NewIngesterStatefulSet(opts Options) (*apps.StatefulSet, error) {
 	podSpec := core.PodSpec{
 		Volumes: []core.Volume{
 			{
@@ -32,15 +39,9 @@ func NewIngesterDeployment(stackName string) *apps.Deployment {
 				VolumeSource: core.VolumeSource{
 					ConfigMap: &core.ConfigMapVolumeSource{
 						LocalObjectReference: core.LocalObjectReference{
-							Name: lokiConfigMapName(stackName),
+							Name: lokiConfigMapName(opts.Name),
 						},
 					},
-				},
-			},
-			{
-				Name: storageVolumeName,
-				VolumeSource: core.VolumeSource{
-					EmptyDir: &core.EmptyDirVolumeSource{},
 				},
 			},
 		},
@@ -115,46 +116,70 @@ func NewIngesterDeployment(stackName string) *apps.Deployment {
 		},
 	}
 
-	l := ComponentLabels("ingester", stackName)
+	ingesterLabels := ComponentLabels("ingester", opts.Name)
 
-	return &apps.Deployment{
+	storageRequests, err := resource.ParseQuantity(opts.Ingester.StorageSize)
+	if err != nil {
+		return nil, kverrors.Wrap(err, "failed to parse quantity specified in Options", "field", "Ingester.StorageClass")
+	}
+
+	return &apps.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "Deployment",
+			Kind:       "StatefulSet",
 			APIVersion: apps.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   fmt.Sprintf("loki-ingester-%s", stackName),
-			Labels: l,
+			Name:   fmt.Sprintf("loki-ingester-%s", opts.Name),
+			Labels: ingesterLabels,
 		},
-		Spec: apps.DeploymentSpec{
+		Spec: apps.StatefulSetSpec{
+			PodManagementPolicy: apps.OrderedReadyPodManagement,
+			RevisionHistoryLimit: pointer.Int32Ptr(10),
 			Replicas: pointer.Int32Ptr(int32(3)),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels.Merge(l, GossipLabels()),
+				MatchLabels: labels.Merge(ingesterLabels, GossipLabels()),
 			},
 			Template: core.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:   fmt.Sprintf("loki-ingester-%s", stackName),
-					Labels: labels.Merge(l, GossipLabels()),
+					Name:   fmt.Sprintf("loki-ingester-%s", opts.Name),
+					Labels: labels.Merge(ingesterLabels, GossipLabels()),
 				},
 				Spec: podSpec,
 			},
-			Strategy: apps.DeploymentStrategy{
-				Type: apps.RollingUpdateDeploymentStrategyType,
+			VolumeClaimTemplates: []core.PersistentVolumeClaim{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: ingesterLabels,
+						Name: storageVolumeName,
+					},
+					Spec: core.PersistentVolumeClaimSpec{
+						AccessModes: []core.PersistentVolumeAccessMode{
+							// TODO: should we verify that this is possible with the given storage class first?
+							core.ReadWriteOnce,
+						},
+						Resources: core.ResourceRequirements{
+							Requests: map[core.ResourceName]resource.Quantity{
+								core.ResourceStorage: storageRequests,
+							},
+						},
+						StorageClassName: pointer.StringPtr(opts.Ingester.StorageClassName),
+					},
+				},
 			},
 		},
-	}
+	}, nil
 }
 
 // NewIngesterGRPCService creates a k8s service for the ingester GRPC endpoint
-func NewIngesterGRPCService(stackName string) *core.Service {
-	l := ComponentLabels("ingester", stackName)
+func NewIngesterGRPCService(opts Options) *core.Service {
+	l := ComponentLabels("ingester", opts.Name)
 	return &core.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: apps.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameIngesterGRPC(stackName),
+			Name:   serviceNameIngesterGRPC(opts.Name),
 			Labels: l,
 		},
 		Spec: core.ServiceSpec{
@@ -171,15 +196,15 @@ func NewIngesterGRPCService(stackName string) *core.Service {
 }
 
 // NewIngesterHTTPService creates a k8s service for the ingester HTTP endpoint
-func NewIngesterHTTPService(stackName string) *core.Service {
-	l := ComponentLabels("ingester", stackName)
+func NewIngesterHTTPService(opts Options) *core.Service {
+	l := ComponentLabels("ingester", opts.Name)
 	return &core.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: apps.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameIngesterHTTP(stackName),
+			Name:   serviceNameIngesterHTTP(opts.Name),
 			Labels: l,
 		},
 		Spec: core.ServiceSpec{

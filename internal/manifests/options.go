@@ -6,4 +6,12 @@ package manifests
 type Options struct {
 	Name      string
 	Namespace string
+
+	Ingester Ingester `default:"{}"`
+}
+
+// Ingester is options for the Ingester
+type Ingester struct {
+	StorageClassName string `default:"-"`
+	StorageSize      string `default:"10Gi"`
 }
