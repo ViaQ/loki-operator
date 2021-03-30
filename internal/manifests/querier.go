@@ -175,7 +175,7 @@ func NewQuerierGRPCService(stackName string) *core.Service {
 	return &core.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
-			APIVersion: apps.SchemeGroupVersion.String(),
+			APIVersion: core.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   serviceNameQuerierGRPC(stackName),
@@ -200,7 +200,7 @@ func NewQuerierHTTPService(stackName string) *core.Service {
 	return &core.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
-			APIVersion: apps.SchemeGroupVersion.String(),
+			APIVersion: core.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   serviceNameQuerierHTTP(stackName),

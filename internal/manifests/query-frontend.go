@@ -147,7 +147,7 @@ func NewQueryFrontendGRPCService(stackName string) *core.Service {
 	return &core.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
-			APIVersion: apps.SchemeGroupVersion.String(),
+			APIVersion: core.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   fmt.Sprintf("loki-query-frontend-grpc-%s", stackName),
@@ -172,7 +172,7 @@ func NewQueryFrontendHTTPService(stackName string) *core.Service {
 	return &core.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
-			APIVersion: apps.SchemeGroupVersion.String(),
+			APIVersion: core.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   fmt.Sprintf("loki-query-frontend-http-%s", stackName),

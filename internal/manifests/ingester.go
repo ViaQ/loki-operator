@@ -176,7 +176,7 @@ func NewIngesterGRPCService(opts Options) *core.Service {
 	return &core.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
-			APIVersion: apps.SchemeGroupVersion.String(),
+			APIVersion: core.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   serviceNameIngesterGRPC(opts.Name),
@@ -201,7 +201,7 @@ func NewIngesterHTTPService(opts Options) *core.Service {
 	return &core.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
-			APIVersion: apps.SchemeGroupVersion.String(),
+			APIVersion: core.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   serviceNameIngesterHTTP(opts.Name),

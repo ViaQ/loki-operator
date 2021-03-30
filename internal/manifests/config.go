@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/ViaQ/loki-operator/internal/manifests/internal/config"
-	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -35,7 +34,7 @@ func LokiConfigMap(stackName, namespace string) (*core.ConfigMap, error) {
 	return &core.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
-			APIVersion: apps.SchemeGroupVersion.String(),
+			APIVersion: core.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   lokiConfigMapName(stackName),

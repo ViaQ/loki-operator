@@ -157,7 +157,7 @@ func NewDistributorHTTPService(stackName string) *core.Service {
 	return &core.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
-			APIVersion: apps.SchemeGroupVersion.String(),
+			APIVersion: core.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   serviceNameDistributorGRPC(stackName),
@@ -182,7 +182,7 @@ func NewDistributorGRPCService(stackName string) *core.Service {
 	return &core.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
-			APIVersion: apps.SchemeGroupVersion.String(),
+			APIVersion: core.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   serviceNameDistributorHTTP(stackName),
