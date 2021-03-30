@@ -39,6 +39,12 @@ func CreateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client) error 
 				SizeRequested: stack.Spec.Ingester.StorageSize,
 			},
 		},
+		Querier: manifests.Querier{
+			Storage: manifests.Storage{
+				ClassName:     stack.Spec.Querier.StorageClassName,
+				SizeRequested: stack.Spec.Querier.StorageSize,
+			},
+		},
 	}
 
 	ll.Info("begin building manifests")
