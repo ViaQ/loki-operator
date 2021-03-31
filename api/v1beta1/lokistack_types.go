@@ -28,23 +28,8 @@ type LokiStackSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Name is the unique name of this LokiStack.
-	Ingester Ingester `json:"ingester,omitempty"`
-	Querier  Querier  `json:"querier,omitempty"`
+	StorageClassName string `json:"storage_class_name,omitempty"`
 }
-
-// Ingester sets options for the ingester component
-type Ingester struct {
-	StorageClassName string `json:"storageClassName,omitempty"`
-	StorageSize      string `json:"storageSize,omitempty"`
-}
-
-// Querier sets options for the Querier component
-type Querier struct {
-	StorageClassName string `json:"storageClassName,omitempty"`
-	StorageSize      string `json:"storageSize,omitempty"`
-}
-
 
 // LokiStackStatus defines the observed state of LokiStack
 type LokiStackStatus struct { // INSERT ADDITIONAL STATUS FIELD - define observed state of cluster

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/ViaQ/logerr/kverrors"
 	"github.com/ViaQ/loki-operator/internal/manifests/internal/config"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
@@ -118,11 +117,6 @@ func NewIngesterStatefulSet(opts Options) (*apps.StatefulSet, error) {
 
 	ingesterLabels := ComponentLabels("ingester", opts.Name)
 
-	storageRequests, err := resource.ParseQuantity(opts.Ingester.Storage.SizeRequested)
-	if err != nil {
-		return nil, kverrors.Wrap(err, "failed to parse quantity specified in Options", "field", "Ingester.StorageClass")
-	}
-
 	return &apps.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
@@ -159,10 +153,10 @@ func NewIngesterStatefulSet(opts Options) (*apps.StatefulSet, error) {
 						},
 						Resources: core.ResourceRequirements{
 							Requests: map[core.ResourceName]resource.Quantity{
-								core.ResourceStorage: storageRequests,
+								core.ResourceStorage: resource.MustParse("1Gi"),
 							},
 						},
-						StorageClassName: pointer.StringPtr(opts.Ingester.Storage.ClassName),
+						StorageClassName: pointer.StringPtr(opts.Stack.StorageClassName),
 					},
 				},
 			},

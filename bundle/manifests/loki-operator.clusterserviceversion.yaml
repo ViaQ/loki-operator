@@ -11,10 +11,7 @@ metadata:
             "name": "lokistack-sample"
           },
           "spec": {
-            "ingester": {
-              "storageClassName": "standard",
-              "storageSize": "7Gi"
-            }
+            "storage_class_name": "standard"
           }
         }
       ]

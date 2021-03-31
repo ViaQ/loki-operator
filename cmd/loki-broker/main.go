@@ -15,10 +15,10 @@ import (
 
 // Define the manifest options here as structured objects
 type config struct {
-	Name          string
-	Namespace     string
-	Replicas      int `yaml:"replicas"`
-	writeToDir    string
+	Name       string
+	Namespace  string
+	Replicas   int
+	writeToDir string
 }
 
 func (c *config) registerFlags(f *flag.FlagSet) {
