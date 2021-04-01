@@ -5,8 +5,8 @@ import (
 	"path"
 
 	"github.com/ViaQ/loki-operator/internal/manifests/internal/config"
-	apps "k8s.io/api/apps/v1"
-	core "k8s.io/api/core/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -17,34 +17,29 @@ import (
 
 // BuildQuerier returns a list of k8s objects for Loki Querier
 func BuildQuerier(opts Options) ([]client.Object, error) {
-	ss, err := NewQuerierStatefulSet(opts)
-	if err != nil {
-		return nil, err
-	}
-
 	return []client.Object{
-		ss,
+		NewQuerierStatefulSet(opts),
 		NewQuerierGRPCService(opts.Name),
 		NewQuerierHTTPService(opts.Name),
 	}, nil
 }
 
 // NewQuerierStatefulSet creates a deployment object for a querier
-func NewQuerierStatefulSet(opts Options) (*apps.StatefulSet, error) {
-	podSpec := core.PodSpec{
-		Volumes: []core.Volume{
+func NewQuerierStatefulSet(opts Options) *appsv1.StatefulSet {
+	podSpec := corev1.PodSpec{
+		Volumes: []corev1.Volume{
 			{
 				Name: configVolumeName,
-				VolumeSource: core.VolumeSource{
-					ConfigMap: &core.ConfigMapVolumeSource{
-						LocalObjectReference: core.LocalObjectReference{
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
 							Name: lokiConfigMapName(opts.Name),
 						},
 					},
 				},
 			},
 		},
-		Containers: []core.Container{
+		Containers: []corev1.Container{
 			{
 				Image: containerImage,
 				Name:  "loki-querier",
@@ -52,30 +47,30 @@ func NewQuerierStatefulSet(opts Options) (*apps.StatefulSet, error) {
 					"-target=querier",
 					fmt.Sprintf("-config.file=%s", path.Join(config.LokiConfigMountDir, config.LokiConfigFileName)),
 				},
-				ReadinessProbe: &core.Probe{
-					Handler: core.Handler{
-						HTTPGet: &core.HTTPGetAction{
+				ReadinessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
 							Path:   "/ready",
 							Port:   intstr.FromInt(httpPort),
-							Scheme: core.URISchemeHTTP,
+							Scheme: corev1.URISchemeHTTP,
 						},
 					},
 					InitialDelaySeconds: 15,
 					TimeoutSeconds:      1,
 				},
-				LivenessProbe: &core.Probe{
-					Handler: core.Handler{
-						HTTPGet: &core.HTTPGetAction{
+				LivenessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
 							Path:   "/metrics",
 							Port:   intstr.FromInt(httpPort),
-							Scheme: core.URISchemeHTTP,
+							Scheme: corev1.URISchemeHTTP,
 						},
 					},
 					TimeoutSeconds:   2,
 					PeriodSeconds:    30,
 					FailureThreshold: 10,
 				},
-				Ports: []core.ContainerPort{
+				Ports: []corev1.ContainerPort{
 					{
 						Name:          "metrics",
 						ContainerPort: httpPort,
@@ -89,17 +84,17 @@ func NewQuerierStatefulSet(opts Options) (*apps.StatefulSet, error) {
 						ContainerPort: gossipPort,
 					},
 				},
-				// Resources: core.ResourceRequirements{
-				// 	Limits: core.ResourceList{
-				// 		core.ResourceMemory: resource.MustParse("1Gi"),
-				// 		core.ResourceCPU:    resource.MustParse("1000m"),
+				// Resources: corev1.ResourceRequirements{
+				// 	Limits: corev1.ResourceList{
+				// 		corev1.ResourceMemory: resource.MustParse("1Gi"),
+				// 		corev1.ResourceCPU:    resource.MustParse("1000m"),
 				// 	},
-				// 	Requests: core.ResourceList{
-				// 		core.ResourceMemory: resource.MustParse("50m"),
-				// 		core.ResourceCPU:    resource.MustParse("50m"),
+				// 	Requests: corev1.ResourceList{
+				// 		corev1.ResourceMemory: resource.MustParse("50m"),
+				// 		corev1.ResourceCPU:    resource.MustParse("50m"),
 				// 	},
 				// },
-				VolumeMounts: []core.VolumeMount{
+				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      configVolumeName,
 						ReadOnly:  false,
@@ -117,43 +112,43 @@ func NewQuerierStatefulSet(opts Options) (*apps.StatefulSet, error) {
 
 	l := ComponentLabels("querier", opts.Name)
 
-	return &apps.StatefulSet{
+	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
-			APIVersion: apps.SchemeGroupVersion.String(),
+			APIVersion: appsv1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   fmt.Sprintf("loki-querier-%s", opts.Name),
 			Labels: l,
 		},
-		Spec: apps.StatefulSetSpec{
-			PodManagementPolicy:  apps.OrderedReadyPodManagement,
+		Spec: appsv1.StatefulSetSpec{
+			PodManagementPolicy:  appsv1.OrderedReadyPodManagement,
 			RevisionHistoryLimit: pointer.Int32Ptr(10),
 			Replicas:             pointer.Int32Ptr(int32(3)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels.Merge(l, GossipLabels()),
 			},
-			Template: core.PodTemplateSpec{
+			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   fmt.Sprintf("loki-querier-%s", opts.Name),
 					Labels: labels.Merge(l, GossipLabels()),
 				},
 				Spec: podSpec,
 			},
-			VolumeClaimTemplates: []core.PersistentVolumeClaim{
+			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Labels: l,
 						Name:   storageVolumeName,
 					},
-					Spec: core.PersistentVolumeClaimSpec{
-						AccessModes: []core.PersistentVolumeAccessMode{
+					Spec: corev1.PersistentVolumeClaimSpec{
+						AccessModes: []corev1.PersistentVolumeAccessMode{
 							// TODO: should we verify that this is possible with the given storage class first?
-							core.ReadWriteOnce,
+							corev1.ReadWriteOnce,
 						},
-						Resources: core.ResourceRequirements{
-							Requests: map[core.ResourceName]resource.Quantity{
-								core.ResourceStorage: resource.MustParse("1Gi"),
+						Resources: corev1.ResourceRequirements{
+							Requests: map[corev1.ResourceName]resource.Quantity{
+								corev1.ResourceStorage: resource.MustParse("1Gi"),
 							},
 						},
 						StorageClassName: pointer.StringPtr(opts.Stack.StorageClassName),
@@ -161,24 +156,24 @@ func NewQuerierStatefulSet(opts Options) (*apps.StatefulSet, error) {
 				},
 			},
 		},
-	}, nil
+	}
 }
 
 // NewQuerierGRPCService creates a k8s service for the querier GRPC endpoint
-func NewQuerierGRPCService(stackName string) *core.Service {
+func NewQuerierGRPCService(stackName string) *corev1.Service {
 	l := ComponentLabels("querier", stackName)
-	return &core.Service{
+	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
-			APIVersion: core.SchemeGroupVersion.String(),
+			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   serviceNameQuerierGRPC(stackName),
 			Labels: l,
 		},
-		Spec: core.ServiceSpec{
+		Spec: corev1.ServiceSpec{
 			ClusterIP: "None",
-			Ports: []core.ServicePort{
+			Ports: []corev1.ServicePort{
 				{
 					Name: "grpc",
 					Port: grpcPort,
@@ -190,20 +185,20 @@ func NewQuerierGRPCService(stackName string) *core.Service {
 }
 
 // NewQuerierHTTPService creates a k8s service for the querier HTTP endpoint
-func NewQuerierHTTPService(stackName string) *core.Service {
+func NewQuerierHTTPService(stackName string) *corev1.Service {
 	l := ComponentLabels("querier", stackName)
-	return &core.Service{
+	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
-			APIVersion: core.SchemeGroupVersion.String(),
+			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   serviceNameQuerierHTTP(stackName),
 			Labels: l,
 		},
-		Spec: core.ServiceSpec{
+		Spec: corev1.ServiceSpec{
 			ClusterIP: "None",
-			Ports: []core.ServicePort{
+			Ports: []corev1.ServicePort{
 				{
 					Name: "http",
 					Port: httpPort,

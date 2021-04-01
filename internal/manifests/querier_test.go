@@ -15,14 +15,14 @@ func TestNewQuerierStatefulSet_SelectorMatchesLabels(t *testing.T) {
 	// failing to specify a matching Pod Selector will result in a validation error
 	// during StatefulSet creation.
 	// See https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-selector
-	ss, err := manifests.NewQuerierStatefulSet(manifests.Options{
+	ss := manifests.NewQuerierStatefulSet(manifests.Options{
 		Name:      "abcd",
 		Namespace: "efgh",
 		Stack: lokiv1beta1.LokiStackSpec{
 			StorageClassName: "standard",
 		},
 	})
-	require.NoError(t, err)
+
 	l := ss.Spec.Template.GetObjectMeta().GetLabels()
 	for key, value := range ss.Spec.Selector.MatchLabels {
 		require.Contains(t, l, key)
