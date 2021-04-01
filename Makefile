@@ -2,6 +2,11 @@
 # referenced here as make variables. For example: $(GOLANGCI_LINT)
 include .bingo/Variables.mk
 
+# CLUSTER_LOGGING_VERSION
+# defines the version of the OpenShift Cluster Logging product.
+# Updates this value when a new version of the product should include this operator and its bundle.
+CLUSTER_LOGGING_VERSION ?= 5.1.preview.1
+
 # VERSION
 # defines the project version for the bundle. 
 # Update this value when you upgrade the version of your project.
@@ -115,19 +120,44 @@ oci-build:
 oci-push:
 	$(OCI_RUNTIME) push ${IMG}
 
+legacy-manifest-dir: manifests/$(CLUSTER_LOGGING_VERSION)/.keep
+manifests/$(CLUSTER_LOGGING_VERSION)/.keep:
+	@mkdir -p $(shell dirname $@) && touch $@
+
+# legacy-manifest-files acts as an intermediary target by depending on all
+# bundle/manifest files being copied to the manifests directory. The manifest
+# yaml files are handled by the target immediately following this, where they
+# simply cp source to target using a wildcard. Put simply, legacy-manifest-files
+# maps to every yaml under bundle/manifest remapped to it's legacy path e.g.
+#   'bundle/manifests/loki.openshift.io_lokistacks.yaml' -> 'manifests/5.1/loki.openshift.io_lokistacks.yaml'
+# where manifests/5.1/loki.openshift.io_lokistacks.yaml is the target.
+legacy-manifest-files: legacy-manifest-dir
+legacy-manifest-files: legacy-csv
+legacy-manifest-files: $(filter-out %.clusterserviceversion.yaml, $(patsubst bundle/manifests/%.yaml, manifests/$(CLUSTER_LOGGING_VERSION)/%.yaml, $(wildcard bundle/manifests/*.yaml)))
+manifests/$(CLUSTER_LOGGING_VERSION)/%.yaml: bundle/manifests/%.yaml
+	@cp -v $^ $@
+
+
+# The CSV does not work under the previous rule, because the
+# CLUSTER_LOGGING_VERSION is part of the target filename so it requires it's
+# own target
+legacy-csv: manifests/$(CLUSTER_LOGGING_VERSION)/loki-operator.v$(CLUSTER_LOGGING_VERSION).clusterserviceversion.yaml
+manifests/$(CLUSTER_LOGGING_VERSION)/loki-operator.v$(CLUSTER_LOGGING_VERSION).clusterserviceversion.yaml: bundle/manifests/loki-operator.clusterserviceversion.yaml
+	@cp -v $^ $@
+
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
-bundle: manifests $(KUSTOMIZE) $(OPERATOR_SDK)
+bundle: manifests legacy-manifest-dir $(KUSTOMIZE) $(OPERATOR_SDK)
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
+	$(MAKE) legacy-manifest-files
 
 # Build the bundle image.
 .PHONY: bundle-build
 bundle-build:
 	$(OCI_RUNTIME) build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
-
 
 cli: bin/loki-broker
 bin/loki-broker: $(GO_FILES) | generate
