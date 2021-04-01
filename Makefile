@@ -9,6 +9,8 @@ include .bingo/Variables.mk
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
 VERSION ?= 0.0.1
+CHANNELS ?= "tech-preview"
+DEFAULT_CHANNELS ?= "tech-preview"
 
 # CHANNELS define the bundle channels used in the bundle. 
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "preview,fast,stable")
@@ -31,12 +33,12 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # BUNDLE_IMG defines the image:tag used for the bundle. 
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
-BUNDLE_IMG ?= quay.io/blockloop/loki-controller-bundle:$(VERSION)
+BUNDLE_IMG ?= quay.io/openshift-logging/loki-operator-bundle:$(VERSION)
 
 GO_FILES := $(shell find . -type f -name '*.go')
 
 # Image URL to use all building/pushing image targets
-IMG ?= quay.io/blockloop/loki-operator:latest
+IMG ?= quay.io/openshift-logging/loki-operator:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
