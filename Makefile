@@ -7,6 +7,10 @@ include .bingo/Variables.mk
 # Updates this value when a new version of the product should include this operator and its bundle.
 CLUSTER_LOGGING_VERSION ?= 5.1.preview.1
 
+# CLUSTER_LOGGING_NS
+# defines the default namespace of the OpenShift Cluster Logging product.
+CLUSTER_LOGGING_NS ?= openshift-logging
+
 # VERSION
 # defines the project version for the bundle. 
 # Update this value when you upgrade the version of your project.
@@ -36,14 +40,17 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
+REGISTRY_ORG ?= openshift-logging
+
 # BUNDLE_IMG defines the image:tag used for the bundle. 
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
-BUNDLE_IMG ?= quay.io/openshift-logging/loki-operator-bundle:$(VERSION)
+BUNDLE_IMG ?= quay.io/$(REGISTRY_ORG)/loki-operator-bundle:v$(VERSION)
 
 GO_FILES := $(shell find . -type f -name '*.go')
 
 # Image URL to use all building/pushing image targets
-IMG ?= quay.io/openshift-logging/loki-operator:latest
+IMG ?= quay.io/$(REGISTRY_ORG)/loki-operator:v$(VERSION)
+
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
@@ -147,7 +154,7 @@ manifests/$(CLUSTER_LOGGING_VERSION)/loki-operator.v$(CLUSTER_LOGGING_VERSION).c
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
-bundle: manifests legacy-manifest-dir $(KUSTOMIZE) $(OPERATOR_SDK)
+bundle: manifests $(KUSTOMIZE) $(OPERATOR_SDK)
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
@@ -158,6 +165,35 @@ bundle: manifests legacy-manifest-dir $(KUSTOMIZE) $(OPERATOR_SDK)
 .PHONY: bundle-build
 bundle-build:
 	$(OCI_RUNTIME) build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+# Build and push the bundle image to a container registry.
+.PHONY: olm-deploy-bundle
+olm-deploy-bundle: bundle bundle-build
+	$(MAKE) oci-push IMG=$(BUNDLE_IMG)
+
+# Build and push the operator image to a container registry.
+.PHONY: olm-deploy-operator
+olm-deploy-operator: oci-build oci-push
+
+# Deploy the operator bundle and the operator via OLM into
+# an Kubernetes cluster selected via KUBECONFIG.
+.PHONY: olm-deploy
+ifeq ($(or $(findstring openshift-logging,$(IMG)),$(findstring openshift-logging,$(BUNDLE_IMG))),openshift-logging)
+olm-deploy:
+	$(error Set variable REGISTRY_ORG to use a custom container registry org account for local development)
+else
+olm-deploy: olm-deploy-bundle olm-deploy-operator $(OPERATOR_SDK)
+	kubectl create ns $(CLUSTER_LOGGING_NS)
+	kubectl label ns/$(CLUSTER_LOGGING_NS) openshift.io/cluster-monitoring=true --overwrite
+	$(OPERATOR_SDK) run bundle -n $(CLUSTER_LOGGING_NS) --install-mode OwnNamespace $(BUNDLE_IMG)
+endif
+
+# Cleanup deployments of the operator bundle and the operator via OLM
+# on an OpenShift cluster selected via KUBECONFIG.
+.PHONY: olm-undeploy
+olm-undeploy: $(OPERATOR_SDK)
+	$(OPERATOR_SDK) cleanup loki-operator
+	kubectl delete ns $(CLUSTER_LOGGING_NS)
 
 cli: bin/loki-broker
 bin/loki-broker: $(GO_FILES) | generate
