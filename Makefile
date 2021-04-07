@@ -11,6 +11,12 @@ CLUSTER_LOGGING_VERSION ?= 5.1.preview.1
 # defines the default namespace of the OpenShift Cluster Logging product.
 CLUSTER_LOGGING_NS ?= openshift-logging
 
+# OLM_VERSION
+# defines the version of the operator-lifecycle-manager to deploy
+# on local kind clusters. OLM is used to install the operator
+# via the operator bundle image.
+OLM_VERSION ?= v0.17.0
+
 # VERSION
 # defines the project version for the bundle. 
 # Update this value when you upgrade the version of your project.
@@ -166,6 +172,45 @@ bundle: manifests $(KUSTOMIZE) $(OPERATOR_SDK)
 bundle-build:
 	$(OCI_RUNTIME) build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
+# Create a new local kind cluster.
+KIND_CLUSTER_NAME = loki-cluster
+.PHONY: kind-create-cluster
+kind-create-cluster: $(KIND)
+	$(KIND) create cluster --name $(KIND_CLUSTER_NAME)
+
+# Destroy the local kind cluster.
+.PHONY: kind-delete-cluster
+kind-delete-cluster: $(KIND)
+	$(KIND) delete cluster --name $(KIND_CLUSTER_NAME)
+
+# Deploy the operator-lifecycle-manager
+# on local kind cluster.
+.PHONY: kind-install-olm
+kind-install-olm: kind-create-cluster
+	./hack/olm-install.sh $(OLM_VERSION)
+
+# Deploy the operator bundle and the operator via OLM
+# on local kind cluster.
+LOKI_OPERATOR_SECRET_NAME = loki-operator-metrics
+.PHONY: kind-olm-deploy
+ifneq ($(findstring $(KIND_CLUSTER_NAME),$(shell $(KIND) get clusters)),$(KIND_CLUSTER_NAME))
+kind-olm-deploy: kind-install-olm olm-prepare-deploy $(CFSSL) $(CFSSLJSON)
+else
+kind-olm-deploy: olm-prepare-deploy $(CFSSL) $(CFSSLJSON)
+endif
+	kubectl apply -f hack/kind/prometheus-operator-0servicemonitorCustomResourceDefinition.yaml
+	kubectl apply -f hack/kind/prometheus-operator-0prometheusruleCustomResourceDefinition.yaml
+	$(CFSSL) gencert -initca hack/kind/ca.json | $(CFSSLJSON) -bare hack/kind/ca
+	$(CFSSL) gencert -ca hack/kind/ca.pem -ca-key hack/kind/ca-key.pem -config hack/kind/cfssl.json -profile=peer hack/kind/loki-operator-monitor-service.json | $(CFSSLJSON) -bare hack/kind/loki-operator-monitor-service
+	kubectl get secret -n $(CLUSTER_LOGGING_NS) $(LOKI_OPERATOR_SECRET_NAME) || kubectl create secret generic $(LOKI_OPERATOR_SECRET_NAME) -n $(CLUSTER_LOGGING_NS) --from-file=tls.crt=hack/kind/loki-operator-monitor-service.pem --from-file=tls.key=hack/kind/loki-operator-monitor-service-key.pem
+	$(MAKE) olm-deploy REGISTRY_ORG=loki-operator-dev VERSION=$(VERSION)-$(shell whoami)
+
+# Cleanup deployments of the operator bundle and the operator
+# via OLM on local kind cluster.
+.PHONY: kind-olm-cleanup
+kind-olm-cleanup:
+	$(MAKE) olm-cleanup
+
 # Build and push the bundle image to a container registry.
 .PHONY: olm-deploy-bundle
 olm-deploy-bundle: bundle bundle-build
@@ -175,6 +220,10 @@ olm-deploy-bundle: bundle bundle-build
 .PHONY: olm-deploy-operator
 olm-deploy-operator: oci-build oci-push
 
+.PHONY: olm-prepare-deploy
+olm-prepare-deploy:
+	kubectl apply -f hack/kind/namespace.yaml
+
 # Deploy the operator bundle and the operator via OLM into
 # an Kubernetes cluster selected via KUBECONFIG.
 .PHONY: olm-deploy
@@ -182,18 +231,16 @@ ifeq ($(or $(findstring openshift-logging,$(IMG)),$(findstring openshift-logging
 olm-deploy:
 	$(error Set variable REGISTRY_ORG to use a custom container registry org account for local development)
 else
-olm-deploy: olm-deploy-bundle olm-deploy-operator $(OPERATOR_SDK)
-	kubectl create ns $(CLUSTER_LOGGING_NS)
-	kubectl label ns/$(CLUSTER_LOGGING_NS) openshift.io/cluster-monitoring=true --overwrite
-	$(OPERATOR_SDK) run bundle -n $(CLUSTER_LOGGING_NS) --install-mode OwnNamespace $(BUNDLE_IMG)
+olm-deploy: olm-deploy-bundle olm-deploy-operator olm-prepare-deploy $(OPERATOR_SDK)
+	$(OPERATOR_SDK) run bundle -n $(CLUSTER_LOGGING_NS) $(BUNDLE_IMG)
 endif
 
 # Cleanup deployments of the operator bundle and the operator via OLM
 # on an OpenShift cluster selected via KUBECONFIG.
-.PHONY: olm-undeploy
-olm-undeploy: $(OPERATOR_SDK)
-	$(OPERATOR_SDK) cleanup loki-operator
-	kubectl delete ns $(CLUSTER_LOGGING_NS)
+.PHONY: olm-cleanup
+olm-cleanup: $(OPERATOR_SDK)
+	$(OPERATOR_SDK) cleanup -n $(CLUSTER_LOGGING_NS) loki-operator
+	kubectl delete -f hack/kind/namespace.yaml
 
 cli: bin/loki-broker
 bin/loki-broker: $(GO_FILES) | generate

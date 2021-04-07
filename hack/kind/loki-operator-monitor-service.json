@@ -1,0 +1,19 @@
+{
+  "CN": "loki-operator-controller-manager-metrics-service.openshift-logging.svc",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+  {
+    "C": "GB",
+    "L": "London",
+    "O": "Kind Loki Cluster",
+    "OU": "Kind Loki Cluster Hosts",
+    "ST": "England"
+  }
+  ],
+  "hosts": [
+      "loki-operator-controller-manager-metrics-service.openshift-logging.svc"
+  ]
+}

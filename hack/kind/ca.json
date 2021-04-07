@@ -1,0 +1,16 @@
+{
+  "CN": "Kind Loki Cluster Root CA",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+  {
+    "C": "GB",
+    "L": "London",
+    "O": "Kind Loki Cluster",
+    "OU": "Kind Loki Cluster Root CA",
+    "ST": "England"
+  }
+ ]
+}
