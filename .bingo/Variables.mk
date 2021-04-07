@@ -41,6 +41,12 @@ $(GOLANGCI_LINT): $(BINGO_DIR)/golangci-lint.mod
 	@echo "(re)installing $(GOBIN)/golangci-lint-v1.38.0"
 	@cd $(BINGO_DIR) && $(GO) build -mod=mod -modfile=golangci-lint.mod -o=$(GOBIN)/golangci-lint-v1.38.0 "github.com/golangci/golangci-lint/cmd/golangci-lint"
 
+KIND := $(GOBIN)/kind-v0.10.0
+$(KIND): $(BINGO_DIR)/kind.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/kind-v0.10.0"
+	@cd $(BINGO_DIR) && $(GO) build -mod=mod -modfile=kind.mod -o=$(GOBIN)/kind-v0.10.0 "sigs.k8s.io/kind"
+
 KUSTOMIZE := $(GOBIN)/kustomize-v3.8.7
 $(KUSTOMIZE): $(BINGO_DIR)/kustomize.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
