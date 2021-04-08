@@ -23,6 +23,18 @@ $(BINGO): $(BINGO_DIR)/bingo.mod
 	@echo "(re)installing $(GOBIN)/bingo-v0.4.0"
 	@cd $(BINGO_DIR) && $(GO) build -mod=mod -modfile=bingo.mod -o=$(GOBIN)/bingo-v0.4.0 "github.com/bwplotka/bingo"
 
+CFSSL := $(GOBIN)/cfssl-v1.5.0
+$(CFSSL): $(BINGO_DIR)/cfssl.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/cfssl-v1.5.0"
+	@cd $(BINGO_DIR) && $(GO) build -mod=mod -modfile=cfssl.mod -o=$(GOBIN)/cfssl-v1.5.0 "github.com/cloudflare/cfssl/cmd/cfssl"
+
+CFSSLJSON := $(GOBIN)/cfssljson-v1.5.0
+$(CFSSLJSON): $(BINGO_DIR)/cfssljson.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/cfssljson-v1.5.0"
+	@cd $(BINGO_DIR) && $(GO) build -mod=mod -modfile=cfssljson.mod -o=$(GOBIN)/cfssljson-v1.5.0 "github.com/cloudflare/cfssl/cmd/cfssljson"
+
 CONTROLLER_GEN := $(GOBIN)/controller-gen-v0.4.1
 $(CONTROLLER_GEN): $(BINGO_DIR)/controller-gen.mod
 	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
