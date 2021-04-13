@@ -22,7 +22,7 @@ CLUSTER_LOGGING_NS ?= openshift-logging
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 0.0.1
+VERSION ?= v0.0.1
 CHANNELS ?= "tech-preview"
 DEFAULT_CHANNELS ?= "tech-preview"
 
@@ -49,12 +49,12 @@ REGISTRY_ORG ?= openshift-logging
 
 # BUNDLE_IMG defines the image:tag used for the bundle. 
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
-BUNDLE_IMG ?= quay.io/$(REGISTRY_ORG)/loki-operator-bundle:v$(VERSION)
+BUNDLE_IMG ?= quay.io/$(REGISTRY_ORG)/loki-operator-bundle:$(VERSION)
 
 GO_FILES := $(shell find . -type f -name '*.go')
 
 # Image URL to use all building/pushing image targets
-IMG ?= quay.io/$(REGISTRY_ORG)/loki-operator:v$(VERSION)
+IMG ?= quay.io/$(REGISTRY_ORG)/loki-operator:$(VERSION)
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
@@ -162,7 +162,7 @@ manifests/$(CLUSTER_LOGGING_VERSION)/loki-operator.v$(CLUSTER_LOGGING_VERSION).c
 bundle: manifests $(KUSTOMIZE) $(OPERATOR_SDK)
 	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
-	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(subst v,,VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 	$(MAKE) legacy-manifest-files
 
