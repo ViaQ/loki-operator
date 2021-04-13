@@ -2,6 +2,11 @@
 # referenced here as make variables. For example: $(GOLANGCI_LINT)
 include .bingo/Variables.mk
 
+# set the default target here, because the include above will automatically set
+# it to the first defined target
+.DEFAULT_GOAL := default
+default: all
+
 # CLUSTER_LOGGING_VERSION
 # defines the version of the OpenShift Cluster Logging product.
 # Updates this value when a new version of the product should include this operator and its bundle.

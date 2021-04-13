@@ -14,7 +14,7 @@ func BuildAll(opt Options) ([]client.Object, error) {
 
 	res := make([]client.Object, 0)
 
-	cm, err := LokiConfigMap(opt.Name, opt.Namespace)
+	cm, err := LokiConfigMap(opt)
 	if err != nil {
 		return nil, err
 	}
