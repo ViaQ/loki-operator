@@ -67,11 +67,11 @@ func configForSize(name, namespace string, sizeType lokiv1beta1.LokiStackSizeTyp
 			Limits: lokiv1beta1.LimitsSpec{
 				Global: lokiv1beta1.LimitsTemplateSpec{
 					IngestionLimits: lokiv1beta1.IngestionLimitSpec{
-						IngestionRate:           20,
-						IngestionBurstSize:      10,
-						MaxStreamsPerUser:       25000,
+						IngestionRate:      20,
+						IngestionBurstSize: 10,
+						MaxStreamsPerUser:  25000,
 					},
-					QueryLimits:     lokiv1beta1.QueryLimitSpec{
+					QueryLimits: lokiv1beta1.QueryLimitSpec{
 						MaxEntriesPerQuery: 0,
 						MaxChunksPerQuery:  0,
 						MaxQuerySeries:     0,
