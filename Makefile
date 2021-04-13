@@ -66,7 +66,7 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-all: lint generate manager bin/loki-broker
+all: generate lint manager bin/loki-broker
 
 OCI_RUNTIME ?= $(shell which podman || which docker)
 
@@ -113,7 +113,7 @@ golangci-lint: $(CURDIR)/bin/golangci-lint
 $(CURDIR)/bin/golangci-lint:
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.38.0
 
-lint: $(GOLANGCI_LINT)
+lint: $(GOLANGCI_LINT) | generate
 	$(GOLANGCI_LINT) run ./...
 
 fmt: $(GOFUMPT)

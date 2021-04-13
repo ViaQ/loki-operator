@@ -64,23 +64,34 @@ func configForSize(name, namespace string, sizeType lokiv1beta1.LokiStackSizeTyp
 		Spec: lokiv1beta1.LokiStackSpec{
 			Size:              sizeType,
 			ReplicationFactor: 2,
-			Limits: &lokiv1beta1.LimitsSpec{
-				Global: &lokiv1beta1.LimitsTemplateSpec{},
+			Limits: lokiv1beta1.LimitsSpec{
+				Global: lokiv1beta1.LimitsTemplateSpec{
+					IngestionLimits: lokiv1beta1.IngestionLimitSpec{
+						IngestionRate:           20,
+						IngestionBurstSize:      10,
+						MaxStreamsPerUser:       25000,
+					},
+					QueryLimits:     lokiv1beta1.QueryLimitSpec{
+						MaxEntriesPerQuery: 0,
+						MaxChunksPerQuery:  0,
+						MaxQuerySeries:     0,
+					},
+				},
 			},
-			Template: &lokiv1beta1.LokiTemplateSpec{
-				Compactor: &lokiv1beta1.LokiComponentSpec{
+			Template: lokiv1beta1.LokiTemplateSpec{
+				Compactor: lokiv1beta1.LokiComponentSpec{
 					Replicas: 3,
 				},
-				Distributor: &lokiv1beta1.LokiComponentSpec{
+				Distributor: lokiv1beta1.LokiComponentSpec{
 					Replicas: 3,
 				},
-				Ingester: &lokiv1beta1.LokiComponentSpec{
+				Ingester: lokiv1beta1.LokiComponentSpec{
 					Replicas: 3,
 				},
-				Querier: &lokiv1beta1.LokiComponentSpec{
+				Querier: lokiv1beta1.LokiComponentSpec{
 					Replicas: 3,
 				},
-				QueryFrontend: &lokiv1beta1.LokiComponentSpec{
+				QueryFrontend: lokiv1beta1.LokiComponentSpec{
 					Replicas: 3,
 				},
 			},

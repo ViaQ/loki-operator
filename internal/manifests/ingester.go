@@ -27,8 +27,6 @@ func BuildIngester(opts Options) ([]client.Object, error) {
 // NewIngesterStatefulSet creates a deployment object for an ingester
 func NewIngesterStatefulSet(opt Options) *appsv1.StatefulSet {
 	podSpec := corev1.PodSpec{
-		NodeSelector: opt.Stack.Template.Ingester.NodeSelector,
-		Tolerations:  opt.Stack.Template.Ingester.Tolerations,
 		Volumes: []corev1.Volume{
 			{
 				Name: configVolumeName,

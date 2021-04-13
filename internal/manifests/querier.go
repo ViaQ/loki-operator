@@ -27,8 +27,6 @@ func BuildQuerier(opt Options) ([]client.Object, error) {
 // NewQuerierStatefulSet creates a deployment object for a querier
 func NewQuerierStatefulSet(opt Options) *appsv1.StatefulSet {
 	podSpec := corev1.PodSpec{
-		NodeSelector: opt.Stack.Template.Querier.NodeSelector,
-		Tolerations:  opt.Stack.Template.Querier.Tolerations,
 		Volumes: []corev1.Volume{
 			{
 				Name: configVolumeName,
