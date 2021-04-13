@@ -1,3 +1,5 @@
+# kustomization that change by machine but should be committed to source
+/config/manager/kustomization.yaml
 
 # Binaries for programs and plugins
 *.exe
