@@ -6,7 +6,7 @@ import (
 
 // Options is used to render the loki-config.yaml file template
 type Options struct {
-	Spec lokiv1beta1.LokiStackSpec
+	Stack lokiv1beta1.LokiStackSpec
 
 	Namespace        string
 	Name             string
