@@ -110,5 +110,6 @@ storage_config:
     region: {{ .ObjectStorage.Region }}
     access_key_id: {{ .ObjectStorage.AccessKeyID }}
     secret_access_key: {{ .ObjectStorage.AccessKeySecret }}
+    s3forcepathstyle: true
 tracing:
   enabled: false

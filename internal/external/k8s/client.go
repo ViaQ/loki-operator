@@ -31,8 +31,6 @@ type Client interface {
 	Status() client.StatusWriter
 }
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . StatusWriter
-
 // StatusWriter is a kubernetes status writer interface used internally. It copies functions from
 // sigs.k8s.io/controller-runtime/pkg/client
 //

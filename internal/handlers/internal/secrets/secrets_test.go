@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ViaQ/loki-operator/internal/handlers/internal/secrets"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -67,8 +68,11 @@ func TestExtract(t *testing.T) {
 			t.Parallel()
 
 			_, err := secrets.Extract(tst.secret)
-			if err == nil && tst.wantErr {
-				t.Errorf("missing error: %s", err)
+			if !tst.wantErr {
+				require.NoError(t, err)
+			}
+			if tst.wantErr {
+				require.NotNil(t, err)
 			}
 		})
 	}
