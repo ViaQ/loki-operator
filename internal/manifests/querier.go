@@ -103,6 +103,7 @@ func NewQuerierStatefulSet(opt Options) *appsv1.StatefulSet {
 	}
 
 	l := ComponentLabels("querier", opt.Name)
+	a := commonAnnotations(opt.ConfigSHA1)
 
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
@@ -122,8 +123,9 @@ func NewQuerierStatefulSet(opt Options) *appsv1.StatefulSet {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:   fmt.Sprintf("loki-querier-%s", opt.Name),
-					Labels: labels.Merge(l, GossipLabels()),
+					Name:        fmt.Sprintf("loki-querier-%s", opt.Name),
+					Labels:      labels.Merge(l, GossipLabels()),
+					Annotations: a,
 				},
 				Spec: podSpec,
 			},
