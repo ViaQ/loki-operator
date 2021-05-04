@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/ViaQ/loki-operator/controllers/internal/management/state"
+	"github.com/ViaQ/loki-operator/internal/external/k8s"
 	"github.com/ViaQ/loki-operator/internal/handlers"
 	"github.com/go-logr/logr"
 
@@ -31,9 +32,36 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	lokiv1beta1 "github.com/ViaQ/loki-operator/api/v1beta1"
+)
+
+var (
+	createOrUpdateOnlyPred = builder.WithPredicates(predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			// Update only if generation changes, filter out anything else.
+			// We only need to check generation here, because it is only
+			// updated on spec changes. On the other hand RevisionVersion
+			// changes also on status changes. We want to omit reconciliation
+			// for status updates for now.
+			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
+		},
+		CreateFunc:  func(e event.CreateEvent) bool { return true },
+		DeleteFunc:  func(e event.DeleteEvent) bool { return false },
+		GenericFunc: func(e event.GenericEvent) bool { return false },
+	})
+	deleteOnlyPred = builder.WithPredicates(predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool { return false },
+		CreateFunc: func(e event.CreateEvent) bool { return false },
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			// DeleteStateUnknown evaluates to false only if the object
+			// has been confirmed as deleted by the api server.
+			return !e.DeleteStateUnknown
+		},
+		GenericFunc: func(e event.GenericEvent) bool { return false },
+	})
 )
 
 // LokiStackReconciler reconciles a LokiStack object
@@ -84,31 +112,13 @@ func (r *LokiStackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *LokiStackReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	createOrUpdateOnlyPred := builder.WithPredicates(predicate.Funcs{
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			// Update only if generation changes, filter out anything else.
-			// We only need to check generation here, because it is only
-			// updated on spec changes. On the other hand RevisionVersion
-			// changes also on status changes. We want to omit reconciliation
-			// for status updates for now.
-			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
-		},
-		CreateFunc:  func(e event.CreateEvent) bool { return true },
-		DeleteFunc:  func(e event.DeleteEvent) bool { return false },
-		GenericFunc: func(e event.GenericEvent) bool { return false },
-	})
-	deleteOnlyPred := builder.WithPredicates(predicate.Funcs{
-		UpdateFunc: func(e event.UpdateEvent) bool { return false },
-		CreateFunc: func(e event.CreateEvent) bool { return false },
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			// DeleteStateUnknown evaluates to false only if the object
-			// has been confirmed as deleted by the api server.
-			return !e.DeleteStateUnknown
-		},
-		GenericFunc: func(e event.GenericEvent) bool { return false },
-	})
-	return ctrl.NewControllerManagedBy(mgr).
+func (r *LokiStackReconciler) SetupWithManager(mgr manager.Manager) error {
+	b := ctrl.NewControllerManagedBy(mgr)
+	return r.buildController(k8s.NewCtrlBuilder(b))
+}
+
+func (r *LokiStackReconciler) buildController(bld k8s.Builder) error {
+	return bld.
 		For(&lokiv1beta1.LokiStack{}, createOrUpdateOnlyPred).
 		Owns(&corev1.ConfigMap{}, deleteOnlyPred).
 		Owns(&corev1.Service{}, deleteOnlyPred).
