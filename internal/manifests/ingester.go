@@ -33,7 +33,7 @@ func NewIngesterStatefulSet(opt Options) *appsv1.StatefulSet {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: lokiConfigMapName(opt.Name),
+							Name: LokiConfigMapName(opt.Name),
 						},
 					},
 				},
@@ -108,7 +108,7 @@ func NewIngesterStatefulSet(opt Options) *appsv1.StatefulSet {
 	}
 
 	l := ComponentLabels("ingester", opt.Name)
-	a := commonAnnotations(opt.ConfigSHA1)
+	a := commonAnnotations(opt, config.CompareIngesterKey)
 
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{

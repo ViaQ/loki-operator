@@ -5,6 +5,7 @@ import (
 
 	lokiv1beta1 "github.com/ViaQ/loki-operator/api/v1beta1"
 	"github.com/ViaQ/loki-operator/internal/manifests"
+	"github.com/ViaQ/loki-operator/internal/manifests/internal/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,9 +38,13 @@ func TestNewCompactorStatefulSet_SelectorMatchesLabels(t *testing.T) {
 
 func TestNewCompactorStatefulSet_HasTemplateConfigHashAnnotation(t *testing.T) {
 	ss := manifests.NewCompactorStatefulSet(manifests.Options{
-		Name:       "abcd",
-		Namespace:  "efgh",
-		ConfigSHA1: "deadbeef",
+		Name:      "abcd",
+		Namespace: "efgh",
+		Config: manifests.Config{
+			CompareResult: config.CompareResult{
+				config.CompareCompactorKey: "deadbeef",
+			},
+		},
 		Stack: lokiv1beta1.LokiStackSpec{
 			StorageClassName: "standard",
 			Template: &lokiv1beta1.LokiTemplateSpec{

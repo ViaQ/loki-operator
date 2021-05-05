@@ -60,6 +60,14 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 		)
 	}
 
+	var cm corev1.ConfigMap
+	key = client.ObjectKey{Name: manifests.LokiConfigMapName(stack.Name), Namespace: stack.Namespace}
+	if err = k.Get(ctx, key, &cm); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return kverrors.Wrap(err, "failed to lookup lokistack config map", "name", key)
+		}
+	}
+
 	// Here we will translate the lokiv1beta1.LokiStack options into manifest options
 	opts := manifests.Options{
 		Name:          req.Name,
@@ -67,6 +75,10 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 		Image:         img,
 		Stack:         stack.Spec,
 		ObjectStorage: *storage,
+		Config: manifests.Config{
+			Config:        cm.BinaryData["config.yaml"],
+			RuntimeConfig: cm.BinaryData["runtime-config.yml"],
+		},
 	}
 
 	ll.Info("begin building manifests")

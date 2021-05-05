@@ -34,7 +34,7 @@ func NewCompactorStatefulSet(opt Options) *appsv1.StatefulSet {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: lokiConfigMapName(opt.Name),
+							Name: LokiConfigMapName(opt.Name),
 						},
 					},
 				},
@@ -105,7 +105,7 @@ func NewCompactorStatefulSet(opt Options) *appsv1.StatefulSet {
 	}
 
 	l := ComponentLabels("compactor", opt.Name)
-	a := commonAnnotations(opt.ConfigSHA1)
+	a := commonAnnotations(opt, config.CompareCompactorKey)
 
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{

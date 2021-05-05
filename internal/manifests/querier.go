@@ -33,7 +33,7 @@ func NewQuerierStatefulSet(opt Options) *appsv1.StatefulSet {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: lokiConfigMapName(opt.Name),
+							Name: LokiConfigMapName(opt.Name),
 						},
 					},
 				},
@@ -108,7 +108,7 @@ func NewQuerierStatefulSet(opt Options) *appsv1.StatefulSet {
 	}
 
 	l := ComponentLabels("querier", opt.Name)
-	a := commonAnnotations(opt.ConfigSHA1)
+	a := commonAnnotations(opt, config.CompareQuerierKey)
 
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{

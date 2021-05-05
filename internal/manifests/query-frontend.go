@@ -32,7 +32,7 @@ func NewQueryFrontendDeployment(opt Options) *appsv1.Deployment {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: lokiConfigMapName(opt.Name),
+							Name: LokiConfigMapName(opt.Name),
 						},
 					},
 				},
@@ -109,7 +109,7 @@ func NewQueryFrontendDeployment(opt Options) *appsv1.Deployment {
 	}
 
 	l := ComponentLabels("query-frontend", opt.Name)
-	a := commonAnnotations(opt.ConfigSHA1)
+	a := commonAnnotations(opt, config.CompareQueryFrontendKey)
 
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{

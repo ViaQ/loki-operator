@@ -1,7 +1,6 @@
 package manifests
 
 import (
-	"crypto/sha1"
 	"fmt"
 	"strings"
 
@@ -11,19 +10,17 @@ import (
 )
 
 // LokiConfigMap creates the single configmap containing the loki configuration for the whole cluster
-func LokiConfigMap(opt Options) (*corev1.ConfigMap, string, error) {
+func LokiConfigMap(opt Options) (*corev1.ConfigMap, config.CompareResult, error) {
 	cfg := ConfigOptions(opt)
 	c, rc, err := config.Build(cfg)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
-	s := sha1.New()
-	_, err = s.Write(c)
+	res, err := config.Compare(opt.Config.Config, c)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
-	sha1C := fmt.Sprintf("%x", s.Sum(nil))
 
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -31,14 +28,14 @@ func LokiConfigMap(opt Options) (*corev1.ConfigMap, string, error) {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   lokiConfigMapName(opt.Name),
+			Name:   LokiConfigMapName(opt.Name),
 			Labels: commonLabels(opt.Name),
 		},
 		BinaryData: map[string][]byte{
 			config.LokiConfigFileName:        c,
 			config.LokiRuntimeConfigFileName: rc,
 		},
-	}, sha1C, nil
+	}, res, nil
 }
 
 // ConfigOptions converts Options to config.Options
@@ -74,6 +71,7 @@ func ConfigOptions(opt Options) config.Options {
 	}
 }
 
-func lokiConfigMapName(stackName string) string {
+// LokiConfigMapName returns the loki config map name.
+func LokiConfigMapName(stackName string) string {
 	return fmt.Sprintf("loki-config-%s", stackName)
 }
