@@ -22,8 +22,8 @@ import (
 func BuildCompactor(opts Options) []client.Object {
 	return []client.Object{
 		NewCompactorStatefulSet(opts),
-		NewCompactorGRPCService(opts),
-		NewCompactorHTTPService(opts),
+		NewCompactorGRPCService(opts.Name),
+		NewCompactorHTTPService(opts.Name),
 		NewCompactorServiceMonitor(opts.Name, opts.Namespace),
 	}
 }
@@ -162,16 +162,17 @@ func NewCompactorStatefulSet(opt Options) *appsv1.StatefulSet {
 }
 
 // NewCompactorGRPCService creates a k8s service for the compactor GRPC endpoint
-func NewCompactorGRPCService(opt Options) *corev1.Service {
-	l := ComponentLabels("compactor", opt.Name)
+func NewCompactorGRPCService(stackName string) *corev1.Service {
+	l := ComponentLabels("compactor", stackName)
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameCompactorGRPC(opt.Name),
-			Labels: l,
+			Name:        serviceNameCompactorGRPC(stackName),
+			Labels:      l,
+			Annotations: ServiceAnnotations(stackName),
 		},
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "None",
@@ -186,17 +187,18 @@ func NewCompactorGRPCService(opt Options) *corev1.Service {
 	}
 }
 
-// NewCompactorHTTPService creates a k8s service for the compactor HTTP endpoint
-func NewCompactorHTTPService(opt Options) *corev1.Service {
-	l := ComponentLabels("compactor", opt.Name)
+// NewCompactorHTTPService creates a k8s service for the ingester HTTP endpoint
+func NewCompactorHTTPService(stackName string) *corev1.Service {
+	l := ComponentLabels("compactor", stackName)
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameCompactorHTTP(opt.Name),
-			Labels: l,
+			Name:        serviceNameCompactorHTTP(stackName),
+			Labels:      l,
+			Annotations: ServiceAnnotations(stackName),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{

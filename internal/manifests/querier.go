@@ -173,8 +173,9 @@ func NewQuerierGRPCService(stackName string) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameQuerierGRPC(stackName),
-			Labels: l,
+			Name:        serviceNameQuerierGRPC(stackName),
+			Labels:      l,
+			Annotations: ServiceAnnotations(stackName),
 		},
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "None",
@@ -198,8 +199,9 @@ func NewQuerierHTTPService(stackName string) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameQuerierHTTP(stackName),
-			Labels: l,
+			Name:        serviceNameQuerierHTTP(stackName),
+			Labels:      l,
+			Annotations: ServiceAnnotations(stackName),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{

@@ -173,8 +173,9 @@ func NewIngesterGRPCService(opt Options) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameIngesterGRPC(opt.Name),
-			Labels: l,
+			Name:        serviceNameIngesterGRPC(opt.Name),
+			Labels:      l,
+			Annotations: ServiceAnnotations(opt.Name),
 		},
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "None",
@@ -198,8 +199,9 @@ func NewIngesterHTTPService(opt Options) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameIngesterHTTP(opt.Name),
-			Labels: l,
+			Name:        serviceNameIngesterHTTP(opt.Name),
+			Labels:      l,
+			Annotations: ServiceAnnotations(opt.Name),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{

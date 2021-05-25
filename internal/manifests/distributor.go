@@ -165,8 +165,9 @@ func NewDistributorGRPCService(stackName string) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameDistributorGRPC(stackName),
-			Labels: l,
+			Name:        serviceNameDistributorGRPC(stackName),
+			Labels:      l,
+			Annotations: ServiceAnnotations(stackName),
 		},
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "None",
@@ -190,8 +191,9 @@ func NewDistributorHTTPService(stackName string) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameDistributorHTTP(stackName),
-			Labels: l,
+			Name:        serviceNameDistributorHTTP(stackName),
+			Labels:      l,
+			Annotations: ServiceAnnotations(stackName),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{

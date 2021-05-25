@@ -182,6 +182,7 @@ func NewQueryFrontendHTTPService(stackName string) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   serviceNameQueryFrontendHTTP(stackName),
 			Labels: l,
+			Annotations: ServiceAnnotations(stackName),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
