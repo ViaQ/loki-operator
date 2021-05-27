@@ -20,6 +20,8 @@ import (
 	"flag"
 	"os"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+
 	"github.com/ViaQ/logerr/log"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -42,6 +44,8 @@ func init() {
 
 	utilruntime.Must(lokiv1beta1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
+
+	utilruntime.Must(monitoringv1.AddToScheme(scheme))
 }
 
 func main() {

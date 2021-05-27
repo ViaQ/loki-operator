@@ -70,6 +70,12 @@ rules:
   - patch
   - update
 - apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - '*'
+- apiGroups:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings

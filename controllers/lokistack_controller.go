@@ -117,6 +117,15 @@ func (r *LokiStackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}, err
 	}
 
+	if err = handlers.CreateOrUpdateServiceMonitor(ctx, req, r.Client); err != nil {
+		err = status.SetDegradedCondition(ctx, r.Client, req,
+			"Running loki operator without Service Monitor",
+			lokiv1beta1.ReasonInvalidServiceMonitorConfiguration)
+		if err != nil {
+			r.Log.Error(err, "Unable to set Degraded condition")
+		}
+	}
+
 	err = status.Refresh(ctx, r.Client, req)
 	if err != nil {
 		return ctrl.Result{
