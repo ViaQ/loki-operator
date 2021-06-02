@@ -5,6 +5,11 @@ import (
 	"github.com/ViaQ/loki-operator/internal/manifests/internal"
 )
 
+const (
+	// IsOCPDeployment determines if the operator was deployed in OpenShift
+	IsOCPDeployment bool = false
+)
+
 // Options is a set of configuration values to use when building manifests such as resource sizes, etc.
 // Most of this should be provided - either directly or indirectly - by the user.
 type Options struct {

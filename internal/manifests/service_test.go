@@ -53,8 +53,8 @@ func TestServicesMatchPorts(t *testing.T) {
 		{
 			Containers: NewIngesterStatefulSet(opt).Spec.Template.Spec.Containers,
 			Services: []*corev1.Service{
-				NewIngesterGRPCService(opt),
-				NewIngesterHTTPService(opt),
+				NewIngesterGRPCService(opt.Name),
+				NewIngesterHTTPService(opt.Name),
 			},
 		},
 		{
@@ -74,8 +74,8 @@ func TestServicesMatchPorts(t *testing.T) {
 		{
 			Containers: NewCompactorStatefulSet(opt).Spec.Template.Spec.Containers,
 			Services: []*corev1.Service{
-				NewCompactorGRPCService(opt),
-				NewCompactorHTTPService(opt),
+				NewCompactorGRPCService(opt.Name),
+				NewCompactorHTTPService(opt.Name),
 			},
 		},
 	}
@@ -152,8 +152,8 @@ func TestServicesMatchLabels(t *testing.T) {
 		{
 			Object: NewIngesterStatefulSet(opt),
 			Services: []*corev1.Service{
-				NewIngesterGRPCService(opt),
-				NewIngesterHTTPService(opt),
+				NewIngesterGRPCService(opt.Name),
+				NewIngesterHTTPService(opt.Name),
 			},
 		},
 		{
@@ -173,8 +173,8 @@ func TestServicesMatchLabels(t *testing.T) {
 		{
 			Object: NewCompactorStatefulSet(opt),
 			Services: []*corev1.Service{
-				NewCompactorGRPCService(opt),
-				NewCompactorHTTPService(opt),
+				NewCompactorGRPCService(opt.Name),
+				NewCompactorHTTPService(opt.Name),
 			},
 		},
 	}

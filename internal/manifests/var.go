@@ -54,9 +54,11 @@ func commonLabels(stackName string) map[string]string {
 
 // ServiceAnnotations is a map of annotations including the openshift cert signing service annotations
 func ServiceAnnotations(stackName string) map[string]string {
-	return map[string]string{
-		"service.beta.openshift.io/serving-cert-secret-name": fmt.Sprintf("%s-%s", stackName, "metrics"),
+	annotations := map[string]string{}
+	if IsOCPDeployment {
+		annotations["service.beta.openshift.io/serving-cert-secret-name"] = fmt.Sprintf("%s-%s", stackName, "metrics")
 	}
+	return annotations
 }
 
 // ComponentLabels is a list of all commonLabels including the loki.grafana.com/component:<component> label

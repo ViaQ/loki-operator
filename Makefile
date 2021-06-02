@@ -70,6 +70,8 @@ all: generate lint manager bin/loki-broker
 
 OCI_RUNTIME ?= $(shell which podman || which docker)
 
+OCP_DEPLOYMENT ?= false
+
 # Run tests
 test: generate go-generate lint manifests
 test: $(GO_FILES)
@@ -130,6 +132,7 @@ generate: $(CONTROLLER_GEN)
 
 # Build the image
 oci-build:
+	sed -i "s/\tIsOCPDeployment.*/\tIsOCPDeployment bool = ${OCP_DEPLOYMENT}/" internal/manifests/options.go
 	$(OCI_RUNTIME) build -t ${IMG} .
 
 # Push the image
@@ -158,6 +161,11 @@ olm-deploy-bundle: bundle bundle-build
 .PHONY: olm-deploy-operator
 olm-deploy-operator: oci-build oci-push
 
+# Build and push the secret for the S3 storage
+.PHONY: olm-deploy-example-storage-secret
+olm-deploy-example-storage-secret:
+	sh hack/deploy-example-secret.sh $(CLUSTER_LOGGING_NS)
+
 # Deploy the operator bundle and the operator via OLM into
 # an Kubernetes cluster selected via KUBECONFIG.
 .PHONY: olm-deploy
@@ -170,6 +178,10 @@ olm-deploy: olm-deploy-bundle olm-deploy-operator $(OPERATOR_SDK)
 	kubectl label ns/$(CLUSTER_LOGGING_NS) openshift.io/cluster-monitoring=true --overwrite
 	$(OPERATOR_SDK) run bundle -n $(CLUSTER_LOGGING_NS) --install-mode OwnNamespace $(BUNDLE_IMG)
 endif
+
+.PHONY: olm-deploy-example
+olm-deploy-example: olm-deploy olm-deploy-example-storage-secret
+	kubectl -n $(CLUSTER_LOGGING_NS) create -f config/samples/loki_v1beta1_lokistack.yaml
 
 # Cleanup deployments of the operator bundle and the operator via OLM
 # on an OpenShift cluster selected via KUBECONFIG.

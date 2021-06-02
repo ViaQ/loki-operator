@@ -21,8 +21,8 @@ import (
 func BuildIngester(opts Options) []client.Object {
 	return []client.Object{
 		NewIngesterStatefulSet(opts),
-		NewIngesterGRPCService(opts),
-		NewIngesterHTTPService(opts),
+		NewIngesterGRPCService(opts.Name),
+		NewIngesterHTTPService(opts.Name),
 		NewIngesterServiceMonitor(opts.Name, opts.Namespace),
 	}
 }
@@ -165,17 +165,17 @@ func NewIngesterStatefulSet(opt Options) *appsv1.StatefulSet {
 }
 
 // NewIngesterGRPCService creates a k8s service for the ingester GRPC endpoint
-func NewIngesterGRPCService(opt Options) *corev1.Service {
-	l := ComponentLabels("ingester", opt.Name)
+func NewIngesterGRPCService(stackName string) *corev1.Service {
+	l := ComponentLabels("ingester", stackName)
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        serviceNameIngesterGRPC(opt.Name),
+			Name:        serviceNameIngesterGRPC(stackName),
 			Labels:      l,
-			Annotations: ServiceAnnotations(opt.Name),
+			Annotations: ServiceAnnotations(stackName),
 		},
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "None",
@@ -191,17 +191,17 @@ func NewIngesterGRPCService(opt Options) *corev1.Service {
 }
 
 // NewIngesterHTTPService creates a k8s service for the ingester HTTP endpoint
-func NewIngesterHTTPService(opt Options) *corev1.Service {
-	l := ComponentLabels("ingester", opt.Name)
+func NewIngesterHTTPService(stackName string) *corev1.Service {
+	l := ComponentLabels("ingester", stackName)
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        serviceNameIngesterHTTP(opt.Name),
+			Name:        serviceNameIngesterHTTP(stackName),
 			Labels:      l,
-			Annotations: ServiceAnnotations(opt.Name),
+			Annotations: ServiceAnnotations(stackName),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
