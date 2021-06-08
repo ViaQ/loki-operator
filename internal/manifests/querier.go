@@ -173,9 +173,8 @@ func NewQuerierGRPCService(stackName string) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        serviceNameQuerierGRPC(stackName),
-			Labels:      l,
-			Annotations: ServiceAnnotations(stackName),
+			Name:   serviceNameQuerierGRPC(stackName),
+			Labels: l,
 		},
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "None",

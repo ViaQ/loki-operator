@@ -51,7 +51,7 @@ func TestServiceMonitorMatchLabels(t *testing.T) {
 			ServiceMonitor: NewDistributorServiceMonitor(opt.Name, opt.Namespace),
 		},
 		{
-			Service:        NewIngesterHTTPService(opt),
+			Service:        NewIngesterHTTPService(opt.Name),
 			ServiceMonitor: NewIngesterServiceMonitor(opt.Name, opt.Namespace),
 		},
 		{
@@ -63,7 +63,7 @@ func TestServiceMonitorMatchLabels(t *testing.T) {
 			ServiceMonitor: NewQueryFrontendServiceMonitor(opt.Name, opt.Namespace),
 		},
 		{
-			Service:        NewCompactorHTTPService(opt),
+			Service:        NewCompactorHTTPService(opt.Name),
 			ServiceMonitor: NewCompactorServiceMonitor(opt.Name, opt.Namespace),
 		},
 	}

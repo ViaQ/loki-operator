@@ -53,6 +53,11 @@ BUNDLE_IMG ?= quay.io/$(REGISTRY_ORG)/loki-operator-bundle:$(VERSION)
 
 GO_FILES := $(shell find . -type f -name '*.go')
 
+# GO_BUILD_TAGS defines the tags to build the operator binary. The outside of the
+# default, the only other option is "openshift". Use this in order to enable, the
+# usage of Openshift specific features.
+GO_BUILD_TAGS ?= ""
+
 # Image URL to use all building/pushing image targets
 IMG ?= quay.io/$(REGISTRY_ORG)/loki-operator:$(VERSION)
 
@@ -70,8 +75,6 @@ all: generate lint manager bin/loki-broker
 
 OCI_RUNTIME ?= $(shell which podman || which docker)
 
-OCP_DEPLOYMENT ?= false
-
 # Run tests
 test: generate go-generate lint manifests
 test: $(GO_FILES)
@@ -83,7 +86,7 @@ scorecard: generate go-generate bundle
 
 # Build manager binary
 manager: generate
-	go build -o bin/manager main.go
+	go build -tags $(GO_BUILD_TAGS) -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate manifests
@@ -132,7 +135,6 @@ generate: $(CONTROLLER_GEN)
 
 # Build the image
 oci-build:
-	sed -i "s/\tIsOCPDeployment.*/\tIsOCPDeployment bool = ${OCP_DEPLOYMENT}/" internal/manifests/options.go
 	$(OCI_RUNTIME) build -t ${IMG} .
 
 # Push the image
@@ -161,11 +163,6 @@ olm-deploy-bundle: bundle bundle-build
 .PHONY: olm-deploy-operator
 olm-deploy-operator: oci-build oci-push
 
-# Build and push the secret for the S3 storage
-.PHONY: olm-deploy-example-storage-secret
-olm-deploy-example-storage-secret:
-	sh hack/deploy-example-secret.sh $(CLUSTER_LOGGING_NS)
-
 # Deploy the operator bundle and the operator via OLM into
 # an Kubernetes cluster selected via KUBECONFIG.
 .PHONY: olm-deploy
@@ -179,9 +176,14 @@ olm-deploy: olm-deploy-bundle olm-deploy-operator $(OPERATOR_SDK)
 	$(OPERATOR_SDK) run bundle -n $(CLUSTER_LOGGING_NS) --install-mode OwnNamespace $(BUNDLE_IMG)
 endif
 
+# Build and push the secret for the S3 storage
+.PHONY: olm-deploy-example-storage-secret
+olm-deploy-example-storage-secret:
+	shell hack/deploy-example-secret.sh $(CLUSTER_LOGGING_NS)
+
 .PHONY: olm-deploy-example
 olm-deploy-example: olm-deploy olm-deploy-example-storage-secret
-	kubectl -n $(CLUSTER_LOGGING_NS) create -f config/samples/loki_v1beta1_lokistack.yaml
+	kubectl -n $(CLUSTER_LOGGING_NS) create -f hack/lokistack_dev.yaml
 
 # Cleanup deployments of the operator bundle and the operator via OLM
 # on an OpenShift cluster selected via KUBECONFIG.

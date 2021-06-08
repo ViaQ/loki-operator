@@ -180,8 +180,8 @@ func NewQueryFrontendHTTPService(stackName string) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameQueryFrontendHTTP(stackName),
-			Labels: l,
+			Name:        serviceNameQueryFrontendHTTP(stackName),
+			Labels:      l,
 			Annotations: ServiceAnnotations(stackName),
 		},
 		Spec: corev1.ServiceSpec{

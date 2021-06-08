@@ -15,9 +15,8 @@ func BuildLokiGossipRingService(stackName string) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        fmt.Sprintf("loki-gossip-ring-%s", stackName),
-			Labels:      commonLabels(stackName),
-			Annotations: ServiceAnnotations(stackName),
+			Name:   fmt.Sprintf("loki-gossip-ring-%s", stackName),
+			Labels: commonLabels(stackName),
 		},
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "None",

@@ -170,9 +170,8 @@ func NewCompactorGRPCService(stackName string) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        serviceNameCompactorGRPC(stackName),
-			Labels:      l,
-			Annotations: ServiceAnnotations(stackName),
+			Name:   serviceNameCompactorGRPC(stackName),
+			Labels: l,
 		},
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "None",

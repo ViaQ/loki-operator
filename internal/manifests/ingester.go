@@ -173,9 +173,8 @@ func NewIngesterGRPCService(stackName string) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        serviceNameIngesterGRPC(stackName),
-			Labels:      l,
-			Annotations: ServiceAnnotations(stackName),
+			Name:   serviceNameIngesterGRPC(stackName),
+			Labels: l,
 		},
 		Spec: corev1.ServiceSpec{
 			ClusterIP: "None",

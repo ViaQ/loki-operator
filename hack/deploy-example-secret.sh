@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -eou pipefail
+
 NAMESPACE=$1
 
 REGION=""
@@ -20,11 +22,11 @@ set_credentials_from_aws() {
 create_secret() {
   kubectl -n $NAMESPACE delete secret test
   kubectl -n $NAMESPACE create secret generic test \
-    --from-literal=endpoint=$(echo "$ENDPOINT" | base64) \
-    --from-literal=region=$(echo "$REGION" | base64) \
-    --from-literal=bucketnames=$(echo "loki" | base64) \
-    --from-literal=access_key_id=$(echo "$ACCESS_KEY_ID" | base64) \
-    --from-literal=access_key_secret=$(echo "$SECRET_ACCESS_KEY" | base64)
+    --from-literal=endpoint=$(echo -n "$ENDPOINT" | base64) \
+    --from-literal=region=$(echo -n "$REGION" | base64) \
+    --from-literal=bucketnames=$(echo -n "loki" | base64) \
+    --from-literal=access_key_id=$(echo -n "$ACCESS_KEY_ID" | base64) \
+    --from-literal=access_key_secret=$(echo -n "$SECRET_ACCESS_KEY" | base64)
 }
 
 main() {

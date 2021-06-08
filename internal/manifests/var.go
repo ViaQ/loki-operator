@@ -55,7 +55,7 @@ func commonLabels(stackName string) map[string]string {
 // ServiceAnnotations is a map of annotations including the openshift cert signing service annotations
 func ServiceAnnotations(stackName string) map[string]string {
 	annotations := map[string]string{}
-	if IsOCPDeployment {
+	if UseCertificateSigningService {
 		annotations["service.beta.openshift.io/serving-cert-secret-name"] = fmt.Sprintf("%s-%s", stackName, "metrics")
 	}
 	return annotations

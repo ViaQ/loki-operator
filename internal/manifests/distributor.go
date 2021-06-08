@@ -191,9 +191,8 @@ func NewDistributorHTTPService(stackName string) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        serviceNameDistributorHTTP(stackName),
-			Labels:      l,
-			Annotations: ServiceAnnotations(stackName),
+			Name:   serviceNameDistributorHTTP(stackName),
+			Labels: l,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
