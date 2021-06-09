@@ -5,10 +5,6 @@ import (
 	"github.com/ViaQ/loki-operator/internal/manifests/internal"
 )
 
-// UseCertificateSigningService is a flag to allow certificate signing for the http services.
-// This flag is set to true when the operator is built for the OpenShift platform.
-var UseCertificateSigningService bool = false
-
 // Options is a set of configuration values to use when building manifests such as resource sizes, etc.
 // Most of this should be provided - either directly or indirectly - by the user.
 type Options struct {

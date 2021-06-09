@@ -53,10 +53,8 @@ BUNDLE_IMG ?= quay.io/$(REGISTRY_ORG)/loki-operator-bundle:$(VERSION)
 
 GO_FILES := $(shell find . -type f -name '*.go')
 
-# GO_BUILD_TAGS defines the tags to build the operator binary. The outside of the
-# default, the only other option is "openshift". Use this in order to enable, the
-# usage of Openshift specific features.
-GO_BUILD_TAGS ?= ""
+# RUN_FLAGS defines the tags that are run with the operator.
+RUN_FLAGS ?= ""
 
 # Image URL to use all building/pushing image targets
 IMG ?= quay.io/$(REGISTRY_ORG)/loki-operator:$(VERSION)
@@ -86,11 +84,11 @@ scorecard: generate go-generate bundle
 
 # Build manager binary
 manager: generate
-	go build -tags $(GO_BUILD_TAGS) -o bin/manager main.go
+	go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate manifests
-	go run ./main.go
+	go run ./main.go $(RUN_FLAGS)
 
 # Install CRDs into a cluster
 install: manifests $(KUSTOMIZE)
