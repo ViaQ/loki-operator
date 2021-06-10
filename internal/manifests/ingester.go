@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"path"
 
-	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-
 	"github.com/ViaQ/loki-operator/internal/manifests/internal/config"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -23,7 +21,6 @@ func BuildIngester(opts Options) []client.Object {
 		NewIngesterStatefulSet(opts),
 		NewIngesterGRPCService(opts.Name),
 		NewIngesterHTTPService(opts.Name),
-		NewIngesterServiceMonitor(opts.Name, opts.Namespace),
 	}
 }
 
@@ -192,6 +189,7 @@ func NewIngesterGRPCService(stackName string) *corev1.Service {
 // NewIngesterHTTPService creates a k8s service for the ingester HTTP endpoint
 func NewIngesterHTTPService(stackName string) *corev1.Service {
 	l := ComponentLabels("ingester", stackName)
+	a := ServiceAnnotations(stackName)
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -200,7 +198,7 @@ func NewIngesterHTTPService(stackName string) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        serviceNameIngesterHTTP(stackName),
 			Labels:      l,
-			Annotations: ServiceAnnotations(stackName),
+			Annotations: a,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -210,37 +208,6 @@ func NewIngesterHTTPService(stackName string) *corev1.Service {
 				},
 			},
 			Selector: l,
-		},
-	}
-}
-
-// NewIngesterServiceMonitor creates a k8s service monitor for the ingester component
-func NewIngesterServiceMonitor(stackName, namespace string) *monitoringv1.ServiceMonitor {
-	l := ComponentLabels(LabelIngesterComponent, stackName)
-
-	serviceMonitorName := fmt.Sprintf("monitor-%s", IngesterName(stackName))
-	serviceName := serviceNameIngesterHTTP(stackName)
-	lokiEndpoint := serviceMonitorLokiEndPoint(stackName, serviceName, namespace)
-
-	return &monitoringv1.ServiceMonitor{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       monitoringv1.ServiceMonitorsKind,
-			APIVersion: monitoringv1.SchemeGroupVersion.String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      serviceMonitorName,
-			Namespace: namespace,
-			Labels:    l,
-		},
-		Spec: monitoringv1.ServiceMonitorSpec{
-			JobLabel:  labelJobComponent,
-			Endpoints: []monitoringv1.Endpoint{lokiEndpoint},
-			Selector: metav1.LabelSelector{
-				MatchLabels: l,
-			},
-			NamespaceSelector: monitoringv1.NamespaceSelector{
-				MatchNames: []string{namespace},
-			},
 		},
 	}
 }

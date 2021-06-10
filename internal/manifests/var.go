@@ -156,14 +156,36 @@ func serviceMonitorTLSConfig(serviceName, namespace string) monitoringv1.TLSConf
 }
 
 // serviceMonitorLokiEndPoint returns the loki endpoint for service monitors.
-func serviceMonitorLokiEndPoint(stackName, serviceName, namespace string) monitoringv1.Endpoint {
-	tlsConfig := serviceMonitorTLSConfig(serviceName, namespace)
-
-	return monitoringv1.Endpoint{
-		Port:            stackName,
-		Path:            "/metrics",
-		Scheme:          "https",
-		BearerTokenFile: BearerTokenFile,
-		TLSConfig:       &tlsConfig,
+func serviceMonitorLokiEndPoint(stackName, serviceName, namespace string, enableTLS bool) monitoringv1.Endpoint {
+	endpoint := monitoringv1.Endpoint{
+		Port:   stackName,
+		Path:   "/metrics",
+		Scheme: "http",
 	}
+
+	if enableTLS {
+		tlsConfig := serviceMonitorTLSConfig(serviceName, namespace)
+
+		endpoint.BearerTokenFile = BearerTokenFile
+		endpoint.TLSConfig = &tlsConfig
+	}
+
+	return endpoint
+
+	// if !enableTLS {
+	// return monitoringv1.Endpoint{
+	// 	Port:   stackName,
+	// 	Path:   "/metrics",
+	// 	Scheme: "http",
+	// }
+	// }
+	//
+	// tlsConfig := serviceMonitorTLSConfig(serviceName, namespace)
+	// return monitoringv1.Endpoint{
+	// 	Port:            stackName,
+	// 	Path:            "/metrics",
+	// 	Scheme:          "https",
+	// 	BearerTokenFile: BearerTokenFile,
+	// 	TLSConfig:       &tlsConfig,
+	// }
 }
