@@ -5,6 +5,7 @@ import (
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -56,7 +57,7 @@ func commonLabels(stackName string) map[string]string {
 func ServiceAnnotations(stackName string) map[string]string {
 	annotations := map[string]string{}
 	if UseCertificateSigningService {
-		annotations["service.beta.openshift.io/serving-cert-secret-name"] = fmt.Sprintf("%s-%s", stackName, "metrics")
+		annotations["service.beta.openshift.io/serving-cert-secret-name"] = signingServiceSecretName(stackName)
 	}
 	return annotations
 }
@@ -140,8 +141,36 @@ func serviceNameQueryFrontendHTTP(stackName string) string {
 	return fmt.Sprintf("loki-query-frontend-http-%s", stackName)
 }
 
+func signingServiceSecretName(stackName string) string {
+	return fmt.Sprintf("%s-%s", stackName, "metrics")
+}
+
 func fqdn(serviceName, namespace string) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", serviceName, namespace)
+}
+
+func volumeMounts(podSpec corev1.PodSpec, stackName string) corev1.podSpec {
+	adjusted := podSpec
+
+	args := adjusted.Containers[0].Args
+	volumeMounts := adjusted.Containers[0].VolumeMounts
+
+	volumeMounts = append(volumeMounts, corev1.VolumeMount{
+		Name:      signingServiceSecretName(stackName),
+		MountPath: "/etc/proxy/secrets",
+	})
+	volumeMounts = append(volumeMounts,corev1.VolumeMount{
+		Name:      "certificates",
+		MountPath: "/etc/proxy/loki",
+	})
+
+	args = append(args, "--metrics-tls-cert=/etc/proxy/secrets/tls.crt")
+	args = append(args, "--metrics-tls-ca=/etc/proxy/secrets/tls.key")
+	args = append(args, "--metrics-tls-key=/etc/proxy/secrets/tls.crt")
+
+	adjusted.Containers[0].Args = args
+	adjusted.Containers[0].VolumeMounts = volumeMounts
+	return adjusted
 }
 
 // serviceMonitorTLSConfig returns the TLS configuration for service monitors.
@@ -157,35 +186,20 @@ func serviceMonitorTLSConfig(serviceName, namespace string) monitoringv1.TLSConf
 
 // serviceMonitorLokiEndPoint returns the loki endpoint for service monitors.
 func serviceMonitorLokiEndPoint(stackName, serviceName, namespace string, enableTLS bool) monitoringv1.Endpoint {
-	endpoint := monitoringv1.Endpoint{
+	if enableTLS {
+		tlsConfig := serviceMonitorTLSConfig(serviceName, namespace)
+		return monitoringv1.Endpoint{
+			Port:            stackName,
+			Path:            "/metrics",
+			Scheme:          "https",
+			BearerTokenFile: BearerTokenFile,
+			TLSConfig:       &tlsConfig,
+		}
+	}
+
+	return monitoringv1.Endpoint{
 		Port:   stackName,
 		Path:   "/metrics",
 		Scheme: "http",
 	}
-
-	if enableTLS {
-		tlsConfig := serviceMonitorTLSConfig(serviceName, namespace)
-
-		endpoint.BearerTokenFile = BearerTokenFile
-		endpoint.TLSConfig = &tlsConfig
-	}
-
-	return endpoint
-
-	// if !enableTLS {
-	// return monitoringv1.Endpoint{
-	// 	Port:   stackName,
-	// 	Path:   "/metrics",
-	// 	Scheme: "http",
-	// }
-	// }
-	//
-	// tlsConfig := serviceMonitorTLSConfig(serviceName, namespace)
-	// return monitoringv1.Endpoint{
-	// 	Port:            stackName,
-	// 	Path:            "/metrics",
-	// 	Scheme:          "https",
-	// 	BearerTokenFile: BearerTokenFile,
-	// 	TLSConfig:       &tlsConfig,
-	// }
 }

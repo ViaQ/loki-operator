@@ -121,6 +121,10 @@ func NewDistributorDeployment(opt Options) *appsv1.Deployment {
 		podSpec.NodeSelector = opt.Stack.Template.Distributor.NodeSelector
 	}
 
+	if opt.UseTLSEnabledServiceMonitor {
+		podSpec = volumeMounts(podSpec, opt.Name)
+	}
+
 	l := ComponentLabels(LabelDistributorComponent, opt.Name)
 	a := commonAnnotations(opt.ConfigSHA1)
 

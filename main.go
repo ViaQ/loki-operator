@@ -44,35 +44,35 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(lokiv1beta1.AddToScheme(scheme))
+	// +kubebuilder:scaffold:scheme
 }
 
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
-	var enableOpenshiftFeatures bool
-	var useTLSServiceMonitorConfig bool
+	var enableServiceMonitors bool
+	var useTLSServiceMonitors bool
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.BoolVar(&enableOpenshiftFeatures, "with-ocp-features", false,
+	flag.BoolVar(&manifests.UseCertificateSigningService, "with-ocp-features", false,
 		"Enables features in an Openshift cluster.")
-	flag.BoolVar(&useTLSServiceMonitorConfig, "with-tls-service-monitor-config", false,
+	flag.BoolVar(&enableServiceMonitors, "with-service-monitors", false, "Enables service monitoring")
+	flag.BoolVar(&useTLSServiceMonitors, "with-tls-service-monitors", false,
 		"Enables loading of a prometheus service monitor.")
 	flag.Parse()
 
 	log.Init("loki-operator")
 	ctrl.SetLogger(log.GetLogger())
 
-	if useTLSServiceMonitorConfig {
-		// +kubebuilder:scaffold:scheme
-		utilruntime.Must(monitoringv1.AddToScheme(scheme))
-	}
+	if enableServiceMonitors || useTLSServiceMonitors {
+		manifests.UseServiceMonitors = true
+		manifests.UseTLSEnabledServiceMonitors = useTLSServiceMonitors
 
-	if enableOpenshiftFeatures {
-		manifests.EnableOpenshiftFeatures()
+		utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{

@@ -76,7 +76,7 @@ func NewQueryFrontendServiceMonitor(stackName, namespace string, useTLSConfig bo
 	return newServiceMonitor(namespace, serviceMonitorName, l, lokiEndpoint)
 }
 
-func newServiceMonitor(namespace, serviceMonitorName string, l labels.Set, endpoint monitoringv1.Endpoint) *monitoringv1.ServiceMonitor {
+func newServiceMonitor(namespace, serviceMonitorName string, labels labels.Set, endpoint monitoringv1.Endpoint) *monitoringv1.ServiceMonitor {
 	return &monitoringv1.ServiceMonitor{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       monitoringv1.ServiceMonitorsKind,
@@ -85,13 +85,13 @@ func newServiceMonitor(namespace, serviceMonitorName string, l labels.Set, endpo
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      serviceMonitorName,
 			Namespace: namespace,
-			Labels:    l,
+			Labels:    labels,
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			JobLabel:  labelJobComponent,
 			Endpoints: []monitoringv1.Endpoint{endpoint},
 			Selector: metav1.LabelSelector{
-				MatchLabels: l,
+				MatchLabels: labels,
 			},
 			NamespaceSelector: monitoringv1.NamespaceSelector{
 				MatchNames: []string{namespace},
