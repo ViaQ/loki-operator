@@ -53,9 +53,6 @@ BUNDLE_IMG ?= quay.io/$(REGISTRY_ORG)/loki-operator-bundle:$(VERSION)
 
 GO_FILES := $(shell find . -type f -name '*.go')
 
-# RUN_FLAGS defines the tags that are run with the operator.
-RUN_FLAGS ?= ""
-
 # Image URL to use all building/pushing image targets
 IMG ?= quay.io/$(REGISTRY_ORG)/loki-operator:$(VERSION)
 
@@ -88,7 +85,7 @@ manager: generate
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate manifests
-	go run ./main.go $(RUN_FLAGS)
+	go run ./main.go
 
 # Install CRDs into a cluster
 install: manifests $(KUSTOMIZE)
