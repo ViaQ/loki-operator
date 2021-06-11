@@ -174,7 +174,7 @@ endif
 # Build and push the secret for the S3 storage
 .PHONY: olm-deploy-example-storage-secret
 olm-deploy-example-storage-secret:
-	shell hack/deploy-example-secret.sh $(CLUSTER_LOGGING_NS)
+	hack/deploy-example-secret.sh $(CLUSTER_LOGGING_NS)
 
 .PHONY: olm-deploy-example
 olm-deploy-example: olm-deploy olm-deploy-example-storage-secret

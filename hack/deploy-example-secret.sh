@@ -20,7 +20,7 @@ set_credentials_from_aws() {
 }
 
 create_secret() {
-  kubectl -n $NAMESPACE delete secret test
+  kubectl -n $NAMESPACE delete secret test ||:
   kubectl -n $NAMESPACE create secret generic test \
     --from-literal=endpoint=$(echo -n "$ENDPOINT" | base64) \
     --from-literal=region=$(echo -n "$REGION" | base64) \
