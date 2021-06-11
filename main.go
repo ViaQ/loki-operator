@@ -52,7 +52,7 @@ func main() {
 	var enableLeaderElection bool
 	var probeAddr string
 	var enableServiceMonitors bool
-	var useTLSServiceMonitors bool
+	var enableTLSServiceMonitors bool
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -61,16 +61,16 @@ func main() {
 	flag.BoolVar(&manifests.UseCertificateSigningService, "with-ocp-features", false,
 		"Enables features in an Openshift cluster.")
 	flag.BoolVar(&enableServiceMonitors, "with-service-monitors", false, "Enables service monitoring")
-	flag.BoolVar(&useTLSServiceMonitors, "with-tls-service-monitors", false,
+	flag.BoolVar(&enableTLSServiceMonitors, "with-tls-service-monitors", false,
 		"Enables loading of a prometheus service monitor.")
 	flag.Parse()
 
 	log.Init("loki-operator")
 	ctrl.SetLogger(log.GetLogger())
 
-	if enableServiceMonitors || useTLSServiceMonitors {
+	if enableServiceMonitors || enableTLSServiceMonitors {
 		manifests.UseServiceMonitors = true
-		manifests.UseTLSEnabledServiceMonitors = useTLSServiceMonitors
+		manifests.UseTLSEnabledServiceMonitors = enableTLSServiceMonitors
 
 		utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	}

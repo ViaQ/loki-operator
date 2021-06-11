@@ -5,7 +5,6 @@ import (
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -54,10 +53,10 @@ func commonLabels(stackName string) map[string]string {
 }
 
 // ServiceAnnotations is a map of annotations including the openshift cert signing service annotations
-func ServiceAnnotations(stackName string) map[string]string {
+func ServiceAnnotations(serviceName string) map[string]string {
 	annotations := map[string]string{}
 	if UseCertificateSigningService {
-		annotations["service.beta.openshift.io/serving-cert-secret-name"] = signingServiceSecretName(stackName)
+		annotations["service.beta.openshift.io/serving-cert-secret-name"] = signingServiceSecretName(serviceName)
 	}
 	return annotations
 }
@@ -141,36 +140,12 @@ func serviceNameQueryFrontendHTTP(stackName string) string {
 	return fmt.Sprintf("loki-query-frontend-http-%s", stackName)
 }
 
-func signingServiceSecretName(stackName string) string {
-	return fmt.Sprintf("%s-%s", stackName, "metrics")
+func signingServiceSecretName(serviceName string) string {
+	return fmt.Sprintf("%s-metrics", serviceName)
 }
 
 func fqdn(serviceName, namespace string) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", serviceName, namespace)
-}
-
-func volumeMounts(podSpec corev1.PodSpec, stackName string) corev1.podSpec {
-	adjusted := podSpec
-
-	args := adjusted.Containers[0].Args
-	volumeMounts := adjusted.Containers[0].VolumeMounts
-
-	volumeMounts = append(volumeMounts, corev1.VolumeMount{
-		Name:      signingServiceSecretName(stackName),
-		MountPath: "/etc/proxy/secrets",
-	})
-	volumeMounts = append(volumeMounts,corev1.VolumeMount{
-		Name:      "certificates",
-		MountPath: "/etc/proxy/loki",
-	})
-
-	args = append(args, "--metrics-tls-cert=/etc/proxy/secrets/tls.crt")
-	args = append(args, "--metrics-tls-ca=/etc/proxy/secrets/tls.key")
-	args = append(args, "--metrics-tls-key=/etc/proxy/secrets/tls.crt")
-
-	adjusted.Containers[0].Args = args
-	adjusted.Containers[0].VolumeMounts = volumeMounts
-	return adjusted
 }
 
 // serviceMonitorTLSConfig returns the TLS configuration for service monitors.

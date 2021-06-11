@@ -163,7 +163,7 @@ func NewQuerierStatefulSet(opt Options) *appsv1.StatefulSet {
 
 // NewQuerierGRPCService creates a k8s service for the querier GRPC endpoint
 func NewQuerierGRPCService(stackName string) *corev1.Service {
-	l := ComponentLabels("querier", stackName)
+	l := ComponentLabels(LabelQuerierComponent, stackName)
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -188,15 +188,18 @@ func NewQuerierGRPCService(stackName string) *corev1.Service {
 
 // NewQuerierHTTPService creates a k8s service for the querier HTTP endpoint
 func NewQuerierHTTPService(stackName string) *corev1.Service {
-	l := ComponentLabels("querier", stackName)
-	a := ServiceAnnotations(stackName)
+	serviceName := serviceNameQuerierHTTP(stackName)
+
+	l := ComponentLabels(LabelQuerierComponent, stackName)
+	a := ServiceAnnotations(serviceName)
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        serviceNameQuerierHTTP(stackName),
+			Name:        serviceName,
 			Labels:      l,
 			Annotations: a,
 		},

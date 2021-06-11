@@ -63,13 +63,13 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 
 	// Here we will translate the lokiv1beta1.LokiStack options into manifest options
 	opts := manifests.Options{
-		Name:                        req.Name,
-		Namespace:                   req.Namespace,
-		Image:                       img,
-		Stack:                       stack.Spec,
-		ObjectStorage:               *storage,
-		UseServiceMonitors:          manifests.UseServiceMonitors,
-		UseTLSEnabledServiceMonitor: manifests.UseTLSEnabledServiceMonitors,
+		Name:                          req.Name,
+		Namespace:                     req.Namespace,
+		Image:                         img,
+		Stack:                         stack.Spec,
+		ObjectStorage:                 *storage,
+		EnableServiceMonitors:         manifests.UseServiceMonitors,
+		EnableTLSServiceMonitorConfig: manifests.UseTLSEnabledServiceMonitors,
 	}
 
 	ll.Info("begin building manifests")

@@ -13,8 +13,8 @@ type Options struct {
 	Image      string
 	ConfigSHA1 string
 
-	UseServiceMonitors          bool
-	UseTLSEnabledServiceMonitor bool
+	EnableServiceMonitors         bool
+	EnableTLSServiceMonitorConfig bool
 
 	Stack                lokiv1beta1.LokiStackSpec
 	ResourceRequirements internal.ComponentResources

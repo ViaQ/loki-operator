@@ -145,7 +145,7 @@ func NewQueryFrontendDeployment(opt Options) *appsv1.Deployment {
 
 // NewQueryFrontendGRPCService creates a k8s service for the query-frontend GRPC endpoint
 func NewQueryFrontendGRPCService(stackName string) *corev1.Service {
-	l := ComponentLabels("query-frontend", stackName)
+	l := ComponentLabels(LabelQueryFrontendComponent, stackName)
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -170,15 +170,18 @@ func NewQueryFrontendGRPCService(stackName string) *corev1.Service {
 
 // NewQueryFrontendHTTPService creates a k8s service for the query-frontend HTTP endpoint
 func NewQueryFrontendHTTPService(stackName string) *corev1.Service {
-	l := ComponentLabels("query-frontend", stackName)
-	a := ServiceAnnotations(stackName)
+	serviceName := serviceNameQueryFrontendHTTP(stackName)
+
+	l := ComponentLabels(LabelQueryFrontendComponent, stackName)
+	a := ServiceAnnotations(serviceName)
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        serviceNameQueryFrontendHTTP(stackName),
+			Name:        serviceName,
 			Labels:      l,
 			Annotations: a,
 		},

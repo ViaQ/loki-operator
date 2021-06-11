@@ -121,8 +121,8 @@ func NewDistributorDeployment(opt Options) *appsv1.Deployment {
 		podSpec.NodeSelector = opt.Stack.Template.Distributor.NodeSelector
 	}
 
-	if opt.UseTLSEnabledServiceMonitor {
-		podSpec = volumeMounts(podSpec, opt.Name)
+	if opt.EnableTLSServiceMonitorConfig {
+		mutatePodSpecForTLSEnablement(&podSpec, serviceNameDistributorHTTP(opt.Name))
 	}
 
 	l := ComponentLabels(LabelDistributorComponent, opt.Name)
@@ -159,7 +159,7 @@ func NewDistributorDeployment(opt Options) *appsv1.Deployment {
 
 // NewDistributorGRPCService creates a k8s service for the distributor GRPC endpoint
 func NewDistributorGRPCService(stackName string) *corev1.Service {
-	l := ComponentLabels("distributor", stackName)
+	l := ComponentLabels(LabelDistributorComponent, stackName)
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -184,15 +184,18 @@ func NewDistributorGRPCService(stackName string) *corev1.Service {
 
 // NewDistributorHTTPService creates a k8s service for the distributor HTTP endpoint
 func NewDistributorHTTPService(stackName string) *corev1.Service {
-	l := ComponentLabels("distributor", stackName)
-	a := ServiceAnnotations(stackName)
+	serviceName := serviceNameDistributorHTTP(stackName)
+
+	l := ComponentLabels(LabelDistributorComponent, stackName)
+	a := ServiceAnnotations(serviceName)
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        serviceNameDistributorHTTP(stackName),
+			Name:        serviceName,
 			Labels:      l,
 			Annotations: a,
 		},

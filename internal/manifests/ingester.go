@@ -163,7 +163,7 @@ func NewIngesterStatefulSet(opt Options) *appsv1.StatefulSet {
 
 // NewIngesterGRPCService creates a k8s service for the ingester GRPC endpoint
 func NewIngesterGRPCService(stackName string) *corev1.Service {
-	l := ComponentLabels("ingester", stackName)
+	l := ComponentLabels(LabelIngesterComponent, stackName)
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -188,15 +188,18 @@ func NewIngesterGRPCService(stackName string) *corev1.Service {
 
 // NewIngesterHTTPService creates a k8s service for the ingester HTTP endpoint
 func NewIngesterHTTPService(stackName string) *corev1.Service {
-	l := ComponentLabels("ingester", stackName)
-	a := ServiceAnnotations(stackName)
+	serviceName := serviceNameIngesterHTTP(stackName)
+
+	l := ComponentLabels(LabelIngesterComponent, stackName)
+	a := ServiceAnnotations(serviceName)
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        serviceNameIngesterHTTP(stackName),
+			Name:        serviceName,
 			Labels:      l,
 			Annotations: a,
 		},

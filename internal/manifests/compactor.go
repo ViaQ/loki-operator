@@ -160,7 +160,7 @@ func NewCompactorStatefulSet(opt Options) *appsv1.StatefulSet {
 
 // NewCompactorGRPCService creates a k8s service for the compactor GRPC endpoint
 func NewCompactorGRPCService(stackName string) *corev1.Service {
-	l := ComponentLabels("compactor", stackName)
+	l := ComponentLabels(LabelCompactorComponent, stackName)
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -185,15 +185,18 @@ func NewCompactorGRPCService(stackName string) *corev1.Service {
 
 // NewCompactorHTTPService creates a k8s service for the ingester HTTP endpoint
 func NewCompactorHTTPService(stackName string) *corev1.Service {
-	l := ComponentLabels("compactor", stackName)
-	a := ServiceAnnotations(stackName)
+	serviceName := serviceNameCompactorHTTP(stackName)
+
+	l := ComponentLabels(LabelCompactorComponent, stackName)
+	a := ServiceAnnotations(serviceName)
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        serviceNameCompactorHTTP(stackName),
+			Name:        serviceName,
 			Labels:      l,
 			Annotations: a,
 		},

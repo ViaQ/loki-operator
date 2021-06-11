@@ -13,11 +13,11 @@ import (
 // BuildServiceMonitors builds the service monitors
 func BuildServiceMonitors(opt Options) []client.Object {
 	return []client.Object{
-		NewDistributorServiceMonitor(opt.Name, opt.Namespace, opt.UseTLSEnabledServiceMonitor),
-		NewIngesterServiceMonitor(opt.Name, opt.Namespace, opt.UseTLSEnabledServiceMonitor),
-		NewQuerierServiceMonitor(opt.Name, opt.Namespace, opt.UseTLSEnabledServiceMonitor),
-		NewCompactorServiceMonitor(opt.Name, opt.Namespace, opt.UseTLSEnabledServiceMonitor),
-		NewQueryFrontendServiceMonitor(opt.Name, opt.Namespace, opt.UseTLSEnabledServiceMonitor),
+		NewDistributorServiceMonitor(opt.Name, opt.Namespace, opt.EnableTLSServiceMonitorConfig),
+		NewIngesterServiceMonitor(opt.Name, opt.Namespace, opt.EnableTLSServiceMonitorConfig),
+		NewQuerierServiceMonitor(opt.Name, opt.Namespace, opt.EnableTLSServiceMonitorConfig),
+		NewCompactorServiceMonitor(opt.Name, opt.Namespace, opt.EnableTLSServiceMonitorConfig),
+		NewQueryFrontendServiceMonitor(opt.Name, opt.Namespace, opt.EnableTLSServiceMonitorConfig),
 	}
 }
 
