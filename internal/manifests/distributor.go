@@ -18,15 +18,34 @@ const (
 	configVolumeName  = "config"
 	storageVolumeName = "storage"
 	dataDirectory     = "/tmp/loki"
+	secretDirectory   = "/etc/proxy/secrets"
 )
 
 // BuildDistributor returns a list of k8s objects for Loki Distributor
-func BuildDistributor(opt Options) []client.Object {
-	return []client.Object{
-		NewDistributorDeployment(opt),
-		NewDistributorHTTPService(opt.Name),
-		NewDistributorGRPCService(opt.Name),
+func BuildDistributor(opt Options) ([]client.Object, error) {
+	objects := []client.Object{}
+
+	deployment := NewDistributorDeployment(opt)
+	httpService := NewDistributorHTTPService(opt.Name)
+	serviceName := serviceNameDistributorHTTP(opt.Name)
+
+	if opt.EnableTLSServiceMonitorConfig {
+		if err := configureServiceMonitorPKI(&deployment.Spec.Template.Spec, serviceName); err != nil {
+			return nil, err
+		}
 	}
+
+	if opt.EnableCertSigningService {
+		if err := configureHTTPServiceCertSigning(httpService, serviceName); err != nil {
+			return nil, err
+		}
+	}
+
+	objects = append(objects, deployment)
+	objects = append(objects, httpService)
+	objects = append(objects, NewDistributorGRPCService(opt.Name))
+
+	return objects, nil
 }
 
 // NewDistributorDeployment creates a deployment object for a distributor
@@ -121,10 +140,6 @@ func NewDistributorDeployment(opt Options) *appsv1.Deployment {
 		podSpec.NodeSelector = opt.Stack.Template.Distributor.NodeSelector
 	}
 
-	if opt.EnableTLSServiceMonitorConfig {
-		mutatePodSpecForTLSEnablement(&podSpec, serviceNameDistributorHTTP(opt.Name))
-	}
-
 	l := ComponentLabels(LabelDistributorComponent, opt.Name)
 	a := commonAnnotations(opt.ConfigSHA1)
 
@@ -184,20 +199,15 @@ func NewDistributorGRPCService(stackName string) *corev1.Service {
 
 // NewDistributorHTTPService creates a k8s service for the distributor HTTP endpoint
 func NewDistributorHTTPService(stackName string) *corev1.Service {
-	serviceName := serviceNameDistributorHTTP(stackName)
-
 	l := ComponentLabels(LabelDistributorComponent, stackName)
-	a := ServiceAnnotations(serviceName)
-
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        serviceName,
-			Labels:      l,
-			Annotations: a,
+			Name:   serviceNameDistributorHTTP(stackName),
+			Labels: l,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{

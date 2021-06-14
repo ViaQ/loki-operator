@@ -69,6 +69,7 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 		Stack:                         stack.Spec,
 		ObjectStorage:                 *storage,
 		EnableServiceMonitors:         manifests.UseServiceMonitors,
+		EnableCertSigningService:      manifests.UseCertificateSigningService,
 		EnableTLSServiceMonitorConfig: manifests.UseTLSEnabledServiceMonitors,
 	}
 

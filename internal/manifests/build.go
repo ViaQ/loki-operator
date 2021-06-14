@@ -20,12 +20,17 @@ func BuildAll(opt Options) ([]client.Object, error) {
 	opt.ConfigSHA1 = sha1C
 
 	res = append(res, cm)
-	res = append(res, BuildDistributor(opt)...)
+	res = append(res, BuildLokiGossipRingService(opt.Name))
+
+	objects, buildErr := BuildDistributor(opt)
+	if buildErr != nil {
+		return nil, buildErr
+	}
+	res = append(res, objects...)
 	res = append(res, BuildIngester(opt)...)
 	res = append(res, BuildQuerier(opt)...)
 	res = append(res, BuildCompactor(opt)...)
 	res = append(res, BuildQueryFrontend(opt)...)
-	res = append(res, BuildLokiGossipRingService(opt.Name))
 
 	if opt.EnableServiceMonitors {
 		res = append(res, BuildServiceMonitors(opt)...)

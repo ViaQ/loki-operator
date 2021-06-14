@@ -3,11 +3,15 @@ package manifests
 import (
 	"fmt"
 
-	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/ViaQ/logerr/kverrors"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/imdario/mergo"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 )
 
 // BuildServiceMonitors builds the service monitors
@@ -98,4 +102,55 @@ func newServiceMonitor(namespace, serviceMonitorName string, labels labels.Set, 
 			},
 		},
 	}
+}
+
+func configureHTTPServiceCertSigning(service *corev1.Service, serviceName string) error {
+	annotations := map[string]string{}
+	annotations["service.beta.openshift.io/serving-cert-secret-name"] = signingServiceSecretName(serviceName)
+
+	if err := mergo.Merge(&service.Annotations, annotations); err != nil {
+		return kverrors.Wrap(err, "failed to merge http service annotations")
+	}
+
+	return nil
+}
+
+func configureServiceMonitorPKI(podSpec *corev1.PodSpec, serviceName string) error {
+	secretName := signingServiceSecretName(serviceName)
+	secretVolumeSpec := corev1.PodSpec{
+		Volumes: []corev1.Volume{
+			{
+				Name: secretName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: secretName,
+					},
+				},
+			},
+		},
+	}
+	secretContainerSpec := corev1.Container{
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      secretName,
+				ReadOnly:  false,
+				MountPath: secretDirectory,
+			},
+		},
+		Args: []string{
+			// "-server.http-tls-ca-path=/etc/proxy/secrets/ca-bundle.crt",
+			"-server.http-tls-cert-path=/etc/proxy/secrets/tls.crt",
+			"-server.http-tls-key-path=/etc/proxy/secrets/tls.key",
+		},
+	}
+
+	if err := mergo.Merge(podSpec, secretVolumeSpec, mergo.WithAppendSlice); err != nil {
+		return kverrors.Wrap(err, "failed to merge volumes")
+	}
+
+	if err := mergo.Merge(&podSpec.Containers[0], secretContainerSpec, mergo.WithAppendSlice); err != nil {
+		return kverrors.Wrap(err, "failed to merge container")
+	}
+
+	return nil
 }

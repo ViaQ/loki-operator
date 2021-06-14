@@ -14,6 +14,7 @@ type Options struct {
 	ConfigSHA1 string
 
 	EnableServiceMonitors         bool
+	EnableCertSigningService      bool
 	EnableTLSServiceMonitorConfig bool
 
 	Stack                lokiv1beta1.LokiStackSpec
