@@ -46,36 +46,36 @@ func TestServicesMatchPorts(t *testing.T) {
 		{
 			Containers: NewDistributorDeployment(opt).Spec.Template.Spec.Containers,
 			Services: []*corev1.Service{
-				NewDistributorGRPCService(opt.Name),
-				NewDistributorHTTPService(opt.Name),
+				NewDistributorGRPCService(opt),
+				NewDistributorHTTPService(opt),
 			},
 		},
 		{
 			Containers: NewIngesterStatefulSet(opt).Spec.Template.Spec.Containers,
 			Services: []*corev1.Service{
-				NewIngesterGRPCService(opt.Name),
-				NewIngesterHTTPService(opt.Name),
+				NewIngesterGRPCService(opt),
+				NewIngesterHTTPService(opt),
 			},
 		},
 		{
 			Containers: NewQuerierStatefulSet(opt).Spec.Template.Spec.Containers,
 			Services: []*corev1.Service{
-				NewQuerierGRPCService(opt.Name),
-				NewQuerierHTTPService(opt.Name),
+				NewQuerierGRPCService(opt),
+				NewQuerierHTTPService(opt),
 			},
 		},
 		{
 			Containers: NewQueryFrontendDeployment(opt).Spec.Template.Spec.Containers,
 			Services: []*corev1.Service{
-				NewQueryFrontendGRPCService(opt.Name),
-				NewQueryFrontendHTTPService(opt.Name),
+				NewQueryFrontendGRPCService(opt),
+				NewQueryFrontendHTTPService(opt),
 			},
 		},
 		{
 			Containers: NewCompactorStatefulSet(opt).Spec.Template.Spec.Containers,
 			Services: []*corev1.Service{
-				NewCompactorGRPCService(opt.Name),
-				NewCompactorHTTPService(opt.Name),
+				NewCompactorGRPCService(opt),
+				NewCompactorHTTPService(opt),
 			},
 		},
 	}
@@ -145,36 +145,36 @@ func TestServicesMatchLabels(t *testing.T) {
 		{
 			Object: NewDistributorDeployment(opt),
 			Services: []*corev1.Service{
-				NewDistributorGRPCService(opt.Name),
-				NewDistributorHTTPService(opt.Name),
+				NewDistributorGRPCService(opt),
+				NewDistributorHTTPService(opt),
 			},
 		},
 		{
 			Object: NewIngesterStatefulSet(opt),
 			Services: []*corev1.Service{
-				NewIngesterGRPCService(opt.Name),
-				NewIngesterHTTPService(opt.Name),
+				NewIngesterGRPCService(opt),
+				NewIngesterHTTPService(opt),
 			},
 		},
 		{
 			Object: NewQuerierStatefulSet(opt),
 			Services: []*corev1.Service{
-				NewQuerierGRPCService(opt.Name),
-				NewQuerierHTTPService(opt.Name),
+				NewQuerierGRPCService(opt),
+				NewQuerierHTTPService(opt),
 			},
 		},
 		{
 			Object: NewQueryFrontendDeployment(opt),
 			Services: []*corev1.Service{
-				NewQueryFrontendGRPCService(opt.Name),
-				NewQueryFrontendHTTPService(opt.Name),
+				NewQueryFrontendGRPCService(opt),
+				NewQueryFrontendHTTPService(opt),
 			},
 		},
 		{
 			Object: NewCompactorStatefulSet(opt),
 			Services: []*corev1.Service{
-				NewCompactorGRPCService(opt.Name),
-				NewCompactorHTTPService(opt.Name),
+				NewCompactorGRPCService(opt),
+				NewCompactorHTTPService(opt),
 			},
 		},
 	}

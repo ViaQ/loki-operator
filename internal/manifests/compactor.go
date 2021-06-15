@@ -17,11 +17,10 @@ import (
 )
 
 // BuildCompactor builds the k8s objects required to run Loki Compactor.
-func BuildCompactor(opts Options) []client.Object {
-	return []client.Object{
-		NewCompactorStatefulSet(opts),
-		NewCompactorGRPCService(opts.Name),
-		NewCompactorHTTPService(opts.Name),
+func BuildCompactor(opts Options) (*appsv1.StatefulSet, []client.Object) {
+	return NewCompactorStatefulSet(opts), []client.Object{
+		NewCompactorGRPCService(opts),
+		NewCompactorHTTPService(opts),
 	}
 }
 
@@ -159,15 +158,16 @@ func NewCompactorStatefulSet(opt Options) *appsv1.StatefulSet {
 }
 
 // NewCompactorGRPCService creates a k8s service for the compactor GRPC endpoint
-func NewCompactorGRPCService(stackName string) *corev1.Service {
-	l := ComponentLabels(LabelCompactorComponent, stackName)
+func NewCompactorGRPCService(opt Options) *corev1.Service {
+	l := ComponentLabels(LabelCompactorComponent, opt.Name)
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameCompactorGRPC(stackName),
+			Name:   serviceNameCompactorGRPC(opt.Name),
 			Labels: l,
 		},
 		Spec: corev1.ServiceSpec{
@@ -184,11 +184,10 @@ func NewCompactorGRPCService(stackName string) *corev1.Service {
 }
 
 // NewCompactorHTTPService creates a k8s service for the ingester HTTP endpoint
-func NewCompactorHTTPService(stackName string) *corev1.Service {
-	serviceName := serviceNameCompactorHTTP(stackName)
-
-	l := ComponentLabels(LabelCompactorComponent, stackName)
-	a := ServiceAnnotations(serviceName)
+func NewCompactorHTTPService(opt Options) *corev1.Service {
+	serviceName := serviceNameCompactorHTTP(opt.Name)
+	l := ComponentLabels(LabelCompactorComponent, opt.Name)
+	a := serviceAnnotations(serviceName, opt.EnableCertSigningService)
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -210,4 +209,9 @@ func NewCompactorHTTPService(stackName string) *corev1.Service {
 			Selector: l,
 		},
 	}
+}
+
+func configureCompactorServiceMonitorPKI(statefulSet *appsv1.StatefulSet, stackName string) error {
+	serviceName := serviceNameCompactorHTTP(stackName)
+	return configureServiceMonitorPKI(&statefulSet.Spec.Template.Spec, serviceName)
 }

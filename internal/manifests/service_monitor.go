@@ -1,8 +1,6 @@
 package manifests
 
 import (
-	"fmt"
-
 	"github.com/ViaQ/logerr/kverrors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -17,67 +15,67 @@ import (
 // BuildServiceMonitors builds the service monitors
 func BuildServiceMonitors(opt Options) []client.Object {
 	return []client.Object{
-		NewDistributorServiceMonitor(opt.Name, opt.Namespace, opt.EnableTLSServiceMonitorConfig),
-		NewIngesterServiceMonitor(opt.Name, opt.Namespace, opt.EnableTLSServiceMonitorConfig),
-		NewQuerierServiceMonitor(opt.Name, opt.Namespace, opt.EnableTLSServiceMonitorConfig),
-		NewCompactorServiceMonitor(opt.Name, opt.Namespace, opt.EnableTLSServiceMonitorConfig),
-		NewQueryFrontendServiceMonitor(opt.Name, opt.Namespace, opt.EnableTLSServiceMonitorConfig),
+		NewDistributorServiceMonitor(opt),
+		NewIngesterServiceMonitor(opt),
+		NewQuerierServiceMonitor(opt),
+		NewCompactorServiceMonitor(opt),
+		NewQueryFrontendServiceMonitor(opt),
 	}
 }
 
 // NewDistributorServiceMonitor creates a k8s service monitor for the distributor component
-func NewDistributorServiceMonitor(stackName, namespace string, useTLSConfig bool) *monitoringv1.ServiceMonitor {
-	l := ComponentLabels(LabelDistributorComponent, stackName)
+func NewDistributorServiceMonitor(opt Options) *monitoringv1.ServiceMonitor {
+	l := ComponentLabels(LabelDistributorComponent, opt.Name)
 
-	serviceMonitorName := fmt.Sprintf("monitor-%s", DistributorName(stackName))
-	serviceName := serviceNameDistributorHTTP(stackName)
-	lokiEndpoint := serviceMonitorLokiEndPoint(stackName, serviceName, namespace, useTLSConfig)
+	serviceMonitorName := serviceMonitorName(DistributorName(opt.Name))
+	serviceName := serviceNameDistributorHTTP(opt.Name)
+	lokiEndpoint := serviceMonitorLokiEndPoint(opt.Name, serviceName, opt.Namespace, opt.EnableTLSServiceMonitorConfig)
 
-	return newServiceMonitor(namespace, serviceMonitorName, l, lokiEndpoint)
+	return newServiceMonitor(opt.Namespace, serviceMonitorName, l, lokiEndpoint)
 }
 
 // NewIngesterServiceMonitor creates a k8s service monitor for the ingester component
-func NewIngesterServiceMonitor(stackName, namespace string, useTLSConfig bool) *monitoringv1.ServiceMonitor {
-	l := ComponentLabels(LabelIngesterComponent, stackName)
+func NewIngesterServiceMonitor(opt Options) *monitoringv1.ServiceMonitor {
+	l := ComponentLabels(LabelIngesterComponent, opt.Name)
 
-	serviceMonitorName := fmt.Sprintf("monitor-%s", IngesterName(stackName))
-	serviceName := serviceNameIngesterHTTP(stackName)
-	lokiEndpoint := serviceMonitorLokiEndPoint(stackName, serviceName, namespace, useTLSConfig)
+	serviceMonitorName := serviceMonitorName(IngesterName(opt.Name))
+	serviceName := serviceNameIngesterHTTP(opt.Name)
+	lokiEndpoint := serviceMonitorLokiEndPoint(opt.Name, serviceName, opt.Namespace, opt.EnableTLSServiceMonitorConfig)
 
-	return newServiceMonitor(namespace, serviceMonitorName, l, lokiEndpoint)
+	return newServiceMonitor(opt.Namespace, serviceMonitorName, l, lokiEndpoint)
 }
 
 // NewQuerierServiceMonitor creates a k8s service monitor for the querier component
-func NewQuerierServiceMonitor(stackName, namespace string, useTLSConfig bool) *monitoringv1.ServiceMonitor {
-	l := ComponentLabels(LabelQuerierComponent, stackName)
+func NewQuerierServiceMonitor(opt Options) *monitoringv1.ServiceMonitor {
+	l := ComponentLabels(LabelQuerierComponent, opt.Name)
 
-	serviceMonitorName := fmt.Sprintf("monitor-%s", QuerierName(stackName))
-	serviceName := serviceNameQuerierHTTP(stackName)
-	lokiEndpoint := serviceMonitorLokiEndPoint(stackName, serviceName, namespace, useTLSConfig)
+	serviceMonitorName := serviceMonitorName(QuerierName(opt.Name))
+	serviceName := serviceNameQuerierHTTP(opt.Name)
+	lokiEndpoint := serviceMonitorLokiEndPoint(opt.Name, serviceName, opt.Namespace, opt.EnableTLSServiceMonitorConfig)
 
-	return newServiceMonitor(namespace, serviceMonitorName, l, lokiEndpoint)
+	return newServiceMonitor(opt.Namespace, serviceMonitorName, l, lokiEndpoint)
 }
 
 // NewCompactorServiceMonitor creates a k8s service monitor for the compactor component
-func NewCompactorServiceMonitor(stackName, namespace string, useTLSConfig bool) *monitoringv1.ServiceMonitor {
-	l := ComponentLabels(LabelCompactorComponent, stackName)
+func NewCompactorServiceMonitor(opt Options) *monitoringv1.ServiceMonitor {
+	l := ComponentLabels(LabelCompactorComponent, opt.Name)
 
-	serviceMonitorName := fmt.Sprintf("monitor-%s", CompactorName(stackName))
-	serviceName := serviceNameCompactorHTTP(stackName)
-	lokiEndpoint := serviceMonitorLokiEndPoint(stackName, serviceName, namespace, useTLSConfig)
+	serviceMonitorName := serviceMonitorName(CompactorName(opt.Name))
+	serviceName := serviceNameCompactorHTTP(opt.Name)
+	lokiEndpoint := serviceMonitorLokiEndPoint(opt.Name, serviceName, opt.Namespace, opt.EnableTLSServiceMonitorConfig)
 
-	return newServiceMonitor(namespace, serviceMonitorName, l, lokiEndpoint)
+	return newServiceMonitor(opt.Namespace, serviceMonitorName, l, lokiEndpoint)
 }
 
 // NewQueryFrontendServiceMonitor creates a k8s service monitor for the query-frontend component
-func NewQueryFrontendServiceMonitor(stackName, namespace string, useTLSConfig bool) *monitoringv1.ServiceMonitor {
-	l := ComponentLabels(LabelQueryFrontendComponent, stackName)
+func NewQueryFrontendServiceMonitor(opt Options) *monitoringv1.ServiceMonitor {
+	l := ComponentLabels(LabelQueryFrontendComponent, opt.Name)
 
-	serviceMonitorName := fmt.Sprintf("monitor-%s", QueryFrontendName(stackName))
-	serviceName := serviceNameQueryFrontendHTTP(stackName)
-	lokiEndpoint := serviceMonitorLokiEndPoint(stackName, serviceName, namespace, useTLSConfig)
+	serviceMonitorName := serviceMonitorName(QueryFrontendName(opt.Name))
+	serviceName := serviceNameQueryFrontendHTTP(opt.Name)
+	lokiEndpoint := serviceMonitorLokiEndPoint(opt.Name, serviceName, opt.Namespace, opt.EnableTLSServiceMonitorConfig)
 
-	return newServiceMonitor(namespace, serviceMonitorName, l, lokiEndpoint)
+	return newServiceMonitor(opt.Namespace, serviceMonitorName, l, lokiEndpoint)
 }
 
 func newServiceMonitor(namespace, serviceMonitorName string, labels labels.Set, endpoint monitoringv1.Endpoint) *monitoringv1.ServiceMonitor {
@@ -104,17 +102,6 @@ func newServiceMonitor(namespace, serviceMonitorName string, labels labels.Set, 
 	}
 }
 
-func configureHTTPServiceCertSigning(service *corev1.Service, serviceName string) error {
-	annotations := map[string]string{}
-	annotations["service.beta.openshift.io/serving-cert-secret-name"] = signingServiceSecretName(serviceName)
-
-	if err := mergo.Merge(&service.Annotations, annotations); err != nil {
-		return kverrors.Wrap(err, "failed to merge http service annotations")
-	}
-
-	return nil
-}
-
 func configureServiceMonitorPKI(podSpec *corev1.PodSpec, serviceName string) error {
 	secretName := signingServiceSecretName(serviceName)
 	secretVolumeSpec := corev1.PodSpec{
@@ -138,7 +125,6 @@ func configureServiceMonitorPKI(podSpec *corev1.PodSpec, serviceName string) err
 			},
 		},
 		Args: []string{
-			// "-server.http-tls-ca-path=/etc/proxy/secrets/ca-bundle.crt",
 			"-server.http-tls-cert-path=/etc/proxy/secrets/tls.crt",
 			"-server.http-tls-key-path=/etc/proxy/secrets/tls.key",
 		},

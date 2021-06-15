@@ -16,11 +16,10 @@ import (
 )
 
 // BuildIngester builds the k8s objects required to run Loki Ingester
-func BuildIngester(opts Options) []client.Object {
-	return []client.Object{
-		NewIngesterStatefulSet(opts),
-		NewIngesterGRPCService(opts.Name),
-		NewIngesterHTTPService(opts.Name),
+func BuildIngester(opts Options) (*appsv1.StatefulSet, []client.Object) {
+	return NewIngesterStatefulSet(opts), []client.Object{
+		NewIngesterGRPCService(opts),
+		NewIngesterHTTPService(opts),
 	}
 }
 
@@ -162,15 +161,16 @@ func NewIngesterStatefulSet(opt Options) *appsv1.StatefulSet {
 }
 
 // NewIngesterGRPCService creates a k8s service for the ingester GRPC endpoint
-func NewIngesterGRPCService(stackName string) *corev1.Service {
-	l := ComponentLabels(LabelIngesterComponent, stackName)
+func NewIngesterGRPCService(opt Options) *corev1.Service {
+	l := ComponentLabels(LabelIngesterComponent, opt.Name)
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameIngesterGRPC(stackName),
+			Name:   serviceNameIngesterGRPC(opt.Name),
 			Labels: l,
 		},
 		Spec: corev1.ServiceSpec{
@@ -187,11 +187,10 @@ func NewIngesterGRPCService(stackName string) *corev1.Service {
 }
 
 // NewIngesterHTTPService creates a k8s service for the ingester HTTP endpoint
-func NewIngesterHTTPService(stackName string) *corev1.Service {
-	serviceName := serviceNameIngesterHTTP(stackName)
-
-	l := ComponentLabels(LabelIngesterComponent, stackName)
-	a := ServiceAnnotations(serviceName)
+func NewIngesterHTTPService(opt Options) *corev1.Service {
+	serviceName := serviceNameIngesterHTTP(opt.Name)
+	l := ComponentLabels(LabelIngesterComponent, opt.Name)
+	a := serviceAnnotations(serviceName, opt.EnableCertSigningService)
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -213,4 +212,9 @@ func NewIngesterHTTPService(stackName string) *corev1.Service {
 			Selector: l,
 		},
 	}
+}
+
+func configureIngesterServiceMonitorPKI(statefulSet *appsv1.StatefulSet, stackName string) error {
+	serviceName := serviceNameIngesterHTTP(stackName)
+	return configureServiceMonitorPKI(&statefulSet.Spec.Template.Spec, serviceName)
 }

@@ -16,11 +16,10 @@ import (
 )
 
 // BuildQuerier returns a list of k8s objects for Loki Querier
-func BuildQuerier(opt Options) []client.Object {
-	return []client.Object{
-		NewQuerierStatefulSet(opt),
-		NewQuerierGRPCService(opt.Name),
-		NewQuerierHTTPService(opt.Name),
+func BuildQuerier(opt Options) (*appsv1.StatefulSet, []client.Object) {
+	return NewQuerierStatefulSet(opt), []client.Object{
+		NewQuerierGRPCService(opt),
+		NewQuerierHTTPService(opt),
 	}
 }
 
@@ -162,15 +161,16 @@ func NewQuerierStatefulSet(opt Options) *appsv1.StatefulSet {
 }
 
 // NewQuerierGRPCService creates a k8s service for the querier GRPC endpoint
-func NewQuerierGRPCService(stackName string) *corev1.Service {
-	l := ComponentLabels(LabelQuerierComponent, stackName)
+func NewQuerierGRPCService(opt Options) *corev1.Service {
+	l := ComponentLabels(LabelQuerierComponent, opt.Name)
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameQuerierGRPC(stackName),
+			Name:   serviceNameQuerierGRPC(opt.Name),
 			Labels: l,
 		},
 		Spec: corev1.ServiceSpec{
@@ -187,11 +187,10 @@ func NewQuerierGRPCService(stackName string) *corev1.Service {
 }
 
 // NewQuerierHTTPService creates a k8s service for the querier HTTP endpoint
-func NewQuerierHTTPService(stackName string) *corev1.Service {
-	serviceName := serviceNameQuerierHTTP(stackName)
-
-	l := ComponentLabels(LabelQuerierComponent, stackName)
-	a := ServiceAnnotations(serviceName)
+func NewQuerierHTTPService(opt Options) *corev1.Service {
+	serviceName := serviceNameQuerierHTTP(opt.Name)
+	l := ComponentLabels(LabelQuerierComponent, opt.Name)
+	a := serviceAnnotations(serviceName, opt.EnableCertSigningService)
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -213,4 +212,9 @@ func NewQuerierHTTPService(stackName string) *corev1.Service {
 			Selector: l,
 		},
 	}
+}
+
+func configureQuerierServiceMonitorPKI(statefulSet *appsv1.StatefulSet, stackName string) error {
+	serviceName := serviceNameQuerierHTTP(stackName)
+	return configureServiceMonitorPKI(&statefulSet.Spec.Template.Spec, serviceName)
 }

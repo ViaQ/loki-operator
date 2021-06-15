@@ -6,7 +6,6 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
 	"github.com/ViaQ/logerr/kverrors"
-	// "github.com/imdario/mergo"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -95,57 +94,4 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) {
 func mutateServiceMonitor(existing, desired *monitoringv1.ServiceMonitor) {
 	// ServiceMonitor selector is immutable so we set this value only if
 	// a new object is going to be created
-}
-
-func mutatePodSpecForTLSEnablement(podSpec *corev1.PodSpec, serviceName string) {
-	secretName := signingServiceSecretName(serviceName)
-
-	podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{
-		Name: secretName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName: secretName,
-			},
-		},
-	})
-	podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
-		Name:      secretName,
-		ReadOnly:  false,
-		MountPath: "/etc/proxy/secrets",
-	})
-	// podSpec.Containers[0].Args = append(podSpec.Containers[0].Args, "-server.http-tls-ca-path=/etc/proxy/secrets/ca-bundle.crt")
-	podSpec.Containers[0].Args = append(podSpec.Containers[0].Args, "-server.http-tls-cert-path=/etc/proxy/secrets/tls.crt")
-	podSpec.Containers[0].Args = append(podSpec.Containers[0].Args, "-server.http-tls-key-path=/etc/proxy/secrets/tls.key")
-
-	// tlsSpec := corev1.PodSpec{
-	// 	Volumes: []corev1.Volume{
-	// 		,
-	// 	},
-	// 	Containers: []corev1.Container{
-	// 		{
-	// 			VolumeMounts: []corev1.VolumeMount{
-	// 				{
-	// 					Name:      secretName,
-	// 					ReadOnly:  false,
-	// 					MountPath: "/etc/proxy/secrets",
-	// 				},
-	// 			},
-	// 			Args: []string{
-	// 				"-server.http-tls-ca-path=/etc/proxy/secrets/ca-bundle.crt",
-	// 				"-server.http-tls-cert-path=/etc/proxy/secrets/tls.crt",
-	// 				"-server.http-tls-key-path=/etc/proxy/secrets/tls.key",
-	// 			},
-	// 		},
-	// 	},
-	// }
-
-	// if err := mergo.Merge(podSpec.Volumes, tlsSpec.Volumes, mergo.WithAppendSlice); err != nil {
-	// 	return kverrors.Wrap(err, "failed to merge volumes")
-	// }
-	//
-	// if err := mergo.Merge(podSpec.Containers[0], tlsSpec.Containers[0], mergo.WithAppendSlice); err != nil {
-	// 	return kverrors.Wrap(err, "failed to merge containers")
-	// }
-	//
-	// return nil
 }

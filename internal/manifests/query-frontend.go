@@ -15,11 +15,10 @@ import (
 )
 
 // BuildQueryFrontend returns a list of k8s objects for Loki QueryFrontend
-func BuildQueryFrontend(opt Options) []client.Object {
-	return []client.Object{
-		NewQueryFrontendDeployment(opt),
-		NewQueryFrontendGRPCService(opt.Name),
-		NewQueryFrontendHTTPService(opt.Name),
+func BuildQueryFrontend(opt Options) (*appsv1.Deployment, []client.Object) {
+	return NewQueryFrontendDeployment(opt), []client.Object{
+		NewQueryFrontendGRPCService(opt),
+		NewQueryFrontendHTTPService(opt),
 	}
 }
 
@@ -144,15 +143,16 @@ func NewQueryFrontendDeployment(opt Options) *appsv1.Deployment {
 }
 
 // NewQueryFrontendGRPCService creates a k8s service for the query-frontend GRPC endpoint
-func NewQueryFrontendGRPCService(stackName string) *corev1.Service {
-	l := ComponentLabels(LabelQueryFrontendComponent, stackName)
+func NewQueryFrontendGRPCService(opt Options) *corev1.Service {
+	l := ComponentLabels(LabelQueryFrontendComponent, opt.Name)
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameQueryFrontendGRPC(stackName),
+			Name:   serviceNameQueryFrontendGRPC(opt.Name),
 			Labels: l,
 		},
 		Spec: corev1.ServiceSpec{
@@ -169,11 +169,10 @@ func NewQueryFrontendGRPCService(stackName string) *corev1.Service {
 }
 
 // NewQueryFrontendHTTPService creates a k8s service for the query-frontend HTTP endpoint
-func NewQueryFrontendHTTPService(stackName string) *corev1.Service {
-	serviceName := serviceNameQueryFrontendHTTP(stackName)
-
-	l := ComponentLabels(LabelQueryFrontendComponent, stackName)
-	a := ServiceAnnotations(serviceName)
+func NewQueryFrontendHTTPService(opt Options) *corev1.Service {
+	serviceName := serviceNameQueryFrontendHTTP(opt.Name)
+	l := ComponentLabels(LabelQueryFrontendComponent, opt.Name)
+	a := serviceAnnotations(serviceName, opt.EnableCertSigningService)
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -195,4 +194,9 @@ func NewQueryFrontendHTTPService(stackName string) *corev1.Service {
 			Selector: l,
 		},
 	}
+}
+
+func configureQueryFrontendServiceMonitorPKI(deployment *appsv1.Deployment, stackName string) error {
+	serviceName := serviceNameQueryFrontendHTTP(stackName)
+	return configureServiceMonitorPKI(&deployment.Spec.Template.Spec, serviceName)
 }

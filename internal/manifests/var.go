@@ -52,10 +52,9 @@ func commonLabels(stackName string) map[string]string {
 	}
 }
 
-// ServiceAnnotations is a map of annotations including the openshift cert signing service annotations
-func ServiceAnnotations(serviceName string) map[string]string {
+func serviceAnnotations(serviceName string, enableSigningService bool) map[string]string {
 	annotations := map[string]string{}
-	if UseCertificateSigningService {
+	if enableSigningService {
 		annotations["service.beta.openshift.io/serving-cert-secret-name"] = signingServiceSecretName(serviceName)
 	}
 	return annotations
@@ -138,6 +137,10 @@ func serviceNameQueryFrontendGRPC(stackName string) string {
 
 func serviceNameQueryFrontendHTTP(stackName string) string {
 	return fmt.Sprintf("loki-query-frontend-http-%s", stackName)
+}
+
+func serviceMonitorName(componentName string) string {
+	return fmt.Sprintf("monitor-%s", componentName)
 }
 
 func signingServiceSecretName(serviceName string) string {

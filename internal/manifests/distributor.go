@@ -22,30 +22,11 @@ const (
 )
 
 // BuildDistributor returns a list of k8s objects for Loki Distributor
-func BuildDistributor(opt Options) ([]client.Object, error) {
-	objects := []client.Object{}
-
-	deployment := NewDistributorDeployment(opt)
-	httpService := NewDistributorHTTPService(opt.Name)
-	serviceName := serviceNameDistributorHTTP(opt.Name)
-
-	if opt.EnableTLSServiceMonitorConfig {
-		if err := configureServiceMonitorPKI(&deployment.Spec.Template.Spec, serviceName); err != nil {
-			return nil, err
-		}
+func BuildDistributor(opt Options) (*appsv1.Deployment, []client.Object) {
+	return NewDistributorDeployment(opt), []client.Object{
+		NewDistributorGRPCService(opt),
+		NewDistributorHTTPService(opt),
 	}
-
-	if opt.EnableCertSigningService {
-		if err := configureHTTPServiceCertSigning(httpService, serviceName); err != nil {
-			return nil, err
-		}
-	}
-
-	objects = append(objects, deployment)
-	objects = append(objects, httpService)
-	objects = append(objects, NewDistributorGRPCService(opt.Name))
-
-	return objects, nil
 }
 
 // NewDistributorDeployment creates a deployment object for a distributor
@@ -173,15 +154,16 @@ func NewDistributorDeployment(opt Options) *appsv1.Deployment {
 }
 
 // NewDistributorGRPCService creates a k8s service for the distributor GRPC endpoint
-func NewDistributorGRPCService(stackName string) *corev1.Service {
-	l := ComponentLabels(LabelDistributorComponent, stackName)
+func NewDistributorGRPCService(opt Options) *corev1.Service {
+	l := ComponentLabels(LabelDistributorComponent, opt.Name)
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameDistributorGRPC(stackName),
+			Name:   serviceNameDistributorGRPC(opt.Name),
 			Labels: l,
 		},
 		Spec: corev1.ServiceSpec{
@@ -198,16 +180,20 @@ func NewDistributorGRPCService(stackName string) *corev1.Service {
 }
 
 // NewDistributorHTTPService creates a k8s service for the distributor HTTP endpoint
-func NewDistributorHTTPService(stackName string) *corev1.Service {
-	l := ComponentLabels(LabelDistributorComponent, stackName)
+func NewDistributorHTTPService(opt Options) *corev1.Service {
+	serviceName := serviceNameDistributorHTTP(opt.Name)
+	l := ComponentLabels(LabelDistributorComponent, opt.Name)
+	a := serviceAnnotations(serviceName, opt.EnableCertSigningService)
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameDistributorHTTP(stackName),
-			Labels: l,
+			Name:        serviceName,
+			Labels:      l,
+			Annotations: a,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -219,4 +205,9 @@ func NewDistributorHTTPService(stackName string) *corev1.Service {
 			Selector: l,
 		},
 	}
+}
+
+func configureDistributorServiceMonitorPKI(deployment *appsv1.Deployment, stackName string) error {
+	serviceName := serviceNameDistributorHTTP(stackName)
+	return configureServiceMonitorPKI(&deployment.Spec.Template.Spec, serviceName)
 }

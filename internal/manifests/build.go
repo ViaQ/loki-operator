@@ -13,24 +13,57 @@ import (
 func BuildAll(opt Options) ([]client.Object, error) {
 	res := make([]client.Object, 0)
 
-	cm, sha1C, err := LokiConfigMap(opt)
-	if err != nil {
-		return nil, err
+	cm, sha1C, mapErr := LokiConfigMap(opt)
+	if mapErr != nil {
+		return nil, mapErr
 	}
 	opt.ConfigSHA1 = sha1C
 
 	res = append(res, cm)
 	res = append(res, BuildLokiGossipRingService(opt.Name))
 
-	objects, buildErr := BuildDistributor(opt)
-	if buildErr != nil {
-		return nil, buildErr
+	distributorDeployment, distributorServices := BuildDistributor(opt)
+	res = append(res, distributorServices...)
+
+	ingesterStatefulSet, ingesterServices := BuildIngester(opt)
+	res = append(res, ingesterServices...)
+
+	querierStatefulSet, querierServices := BuildQuerier(opt)
+	res = append(res, querierServices...)
+
+	compactorStatefulSet, compactorServices := BuildCompactor(opt)
+	res = append(res, compactorServices...)
+
+	queryFrontendDeployment, queryFrontendServices := BuildQueryFrontend(opt)
+	res = append(res, queryFrontendServices...)
+
+	if opt.EnableTLSServiceMonitorConfig {
+		if err := configureDistributorServiceMonitorPKI(distributorDeployment, opt.Name); err != nil {
+			return nil, err
+		}
+
+		if err := configureIngesterServiceMonitorPKI(ingesterStatefulSet, opt.Name); err != nil {
+			return nil, err
+		}
+
+		if err := configureQuerierServiceMonitorPKI(querierStatefulSet, opt.Name); err != nil {
+			return nil, err
+		}
+
+		if err := configureCompactorServiceMonitorPKI(compactorStatefulSet, opt.Name); err != nil {
+			return nil, err
+		}
+
+		if err := configureQueryFrontendServiceMonitorPKI(queryFrontendDeployment, opt.Name); err != nil {
+			return nil, err
+		}
 	}
-	res = append(res, objects...)
-	res = append(res, BuildIngester(opt)...)
-	res = append(res, BuildQuerier(opt)...)
-	res = append(res, BuildCompactor(opt)...)
-	res = append(res, BuildQueryFrontend(opt)...)
+
+	res = append(res, distributorDeployment)
+	res = append(res, ingesterStatefulSet)
+	res = append(res, querierStatefulSet)
+	res = append(res, compactorStatefulSet)
+	res = append(res, queryFrontendDeployment)
 
 	if opt.EnableServiceMonitors {
 		res = append(res, BuildServiceMonitors(opt)...)
