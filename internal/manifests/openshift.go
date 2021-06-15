@@ -1,10 +1,8 @@
 package manifests
 
-var (
-	// UseCertificateSigningService test
-	UseCertificateSigningService = false
-	// UseServiceMonitors test
-	UseServiceMonitors = false
-	// UseTLSEnabledServiceMonitors test
-	UseTLSEnabledServiceMonitors = false
-)
+// OpenshiftOptions contains flags that activate Openshift features
+type OpenshiftOptions struct {
+	EnableCertificateSigningService bool
+	EnableServiceMonitors           bool
+	EnableTLSEnabledServiceMonitors bool
+}

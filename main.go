@@ -51,6 +51,7 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var enableCertSigning bool
 	var enableServiceMonitors bool
 	var enableTLSServiceMonitors bool
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -58,7 +59,7 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.BoolVar(&manifests.UseCertificateSigningService, "with-ocp-features", false,
+	flag.BoolVar(&enableCertSigning, "with-ocp-features", false,
 		"Enables features in an Openshift cluster.")
 	flag.BoolVar(&enableServiceMonitors, "with-service-monitors", false, "Enables service monitoring")
 	flag.BoolVar(&enableTLSServiceMonitors, "with-tls-service-monitors", false,
@@ -69,9 +70,6 @@ func main() {
 	ctrl.SetLogger(log.GetLogger())
 
 	if enableServiceMonitors || enableTLSServiceMonitors {
-		manifests.UseServiceMonitors = true
-		manifests.UseTLSEnabledServiceMonitors = enableTLSServiceMonitors
-
 		utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	}
 
@@ -88,10 +86,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	options := manifests.OpenshiftOptions{
+		EnableCertificateSigningService: enableCertSigning,
+		EnableServiceMonitors:           enableServiceMonitors,
+		EnableTLSEnabledServiceMonitors: enableTLSServiceMonitors,
+	}
+
 	if err = (&controllers.LokiStackReconciler{
-		Client: mgr.GetClient(),
-		Log:    log.WithName("controllers").WithName("LokiStack"),
-		Scheme: mgr.GetScheme(),
+		Client:  mgr.GetClient(),
+		Log:     log.WithName("controllers").WithName("LokiStack"),
+		Scheme:  mgr.GetScheme(),
+		Options: options,
 	}).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create controller", "controller", "LokiStack")
 		os.Exit(1)
