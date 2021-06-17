@@ -437,7 +437,7 @@ spec:
               - args:
                 - --with-ocp-features
                 - --with-service-monitors
-                - --with-tls-service-monitors
+                - --with-cert-signing-service
                 command:
                 - /manager
                 env:

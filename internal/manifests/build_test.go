@@ -1,8 +1,10 @@
 package manifests
 
 import (
+	"fmt"
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lokiv1beta1 "github.com/ViaQ/loki-operator/api/v1beta1"
@@ -80,8 +82,13 @@ func TestApplyUserOptions_AlwaysSetCompactorReplicasToOne(t *testing.T) {
 }
 
 func TestBuildAll_DidBuildServiceMonitors(t *testing.T) {
-	opt := Options{
-		Name: "test",
+	type test struct {
+		MonitorCount int
+		BuildOptions Options
+	}
+
+	enabledOpts := Options{
+		Name:      "test",
 		Namespace: "test",
 		Stack: lokiv1beta1.LokiStackSpec{
 			Size: lokiv1beta1.SizeOneXSmall,
@@ -93,25 +100,97 @@ func TestBuildAll_DidBuildServiceMonitors(t *testing.T) {
 		},
 	}
 
-	err := ApplyDefaultSettings(&opt)
-	require.NoError(t, err)
+	disabledOpts := enabledOpts
+	disabledOpts.Flags.EnableServiceMonitors = false
 
-	objects, buildErr := BuildAll(opt)
+	table := []test{
+		{
+			MonitorCount: 0,
+			BuildOptions: disabledOpts,
+		},
+		{
+			MonitorCount: 5,
+			BuildOptions: enabledOpts,
+		},
+	}
 
-	require.NoError(t, buildErr)
-	require.Equal(t, 5, serviceMonitorCount(objects))
+	for index, tst := range table {
+		testName := fmt.Sprintf("%s_service_monitor_count_%v", tst.BuildOptions.Name, index)
+		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
 
-	opt.Flags.EnableServiceMonitors = false
-	objects, buildErr = BuildAll(opt)
+			err := ApplyDefaultSettings(&tst.BuildOptions)
+			require.NoError(t, err)
 
-	require.NoError(t, buildErr)
-	require.Equal(t, 0, serviceMonitorCount(objects))
+			objects, buildErr := BuildAll(tst.BuildOptions)
+
+			require.NoError(t, buildErr)
+			require.Equal(t, tst.MonitorCount, serviceMonitorCount(objects))
+		})
+	}
+}
+
+func TestBuildAll_DidAddCertSigningAnnotations(t *testing.T) {
+	type test struct {
+		BuildOptions Options
+	}
+
+	enabledOpts := Options{
+		Name:      "test",
+		Namespace: "test",
+		Stack: lokiv1beta1.LokiStackSpec{
+			Size: lokiv1beta1.SizeOneXSmall,
+		},
+		Flags: FeatureFlags{
+			EnableCertificateSigningService: true,
+			EnableServiceMonitors:           false,
+			EnableTLSServiceMonitorConfig:   false,
+		},
+	}
+
+	disabledOpts := enabledOpts
+	disabledOpts.Flags.EnableCertificateSigningService = false
+
+	table := []test{
+		{
+			BuildOptions: disabledOpts,
+		},
+		{
+			BuildOptions: enabledOpts,
+		},
+	}
+
+	for index, tst := range table {
+		testName := fmt.Sprintf("%s_service_monitor_count_%v", tst.BuildOptions.Name, index)
+		t.Run(testName, func(t *testing.T) {
+			t.Parallel()
+
+			err := ApplyDefaultSettings(&tst.BuildOptions)
+			require.NoError(t, err)
+
+			httpServices := []*corev1.Service{
+				 NewDistributorHTTPService(tst.BuildOptions),
+				 NewIngesterHTTPService(tst.BuildOptions),
+				 NewQuerierHTTPService(tst.BuildOptions),
+				 NewQueryFrontendHTTPService(tst.BuildOptions),
+				 NewCompactorHTTPService(tst.BuildOptions),
+			}
+
+			for _, service := range httpServices {
+				if !tst.BuildOptions.Flags.EnableCertificateSigningService {
+					require.Equal(t, service.ObjectMeta.Annotations, map[string]string{})
+				} else {
+					require.NotNil(t, service.ObjectMeta.Annotations["service.beta.openshift.io/serving-cert-secret-name"])
+				}
+			}
+		})
+	}
 }
 
 func serviceMonitorCount(objects []client.Object) int {
 	monitors := 0
 	for _, obj := range objects {
-		if obj.GetObjectKind().GroupVersionKind().Kind == "ServiceMonitor"{
+		if obj.GetObjectKind().GroupVersionKind().Kind == "ServiceMonitor" {
 			monitors++
 		}
 	}
