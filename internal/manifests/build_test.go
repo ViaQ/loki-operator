@@ -3,6 +3,8 @@ package manifests
 import (
 	"testing"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	lokiv1beta1 "github.com/ViaQ/loki-operator/api/v1beta1"
 	"github.com/ViaQ/loki-operator/internal/manifests/internal"
 	"github.com/stretchr/testify/require"
@@ -75,4 +77,43 @@ func TestApplyUserOptions_AlwaysSetCompactorReplicasToOne(t *testing.T) {
 		// Require compactor to be reverted to 1 replica
 		require.Equal(t, defs.Template.Compactor, opt.Stack.Template.Compactor)
 	}
+}
+
+func TestBuildAll_DidBuildServiceMonitors(t *testing.T) {
+	opt := Options{
+		Name: "test",
+		Namespace: "test",
+		Stack: lokiv1beta1.LokiStackSpec{
+			Size: lokiv1beta1.SizeOneXSmall,
+		},
+		Flags: FeatureFlags{
+			EnableCertificateSigningService: false,
+			EnableServiceMonitors:           true,
+			EnableTLSServiceMonitorConfig:   false,
+		},
+	}
+
+	err := ApplyDefaultSettings(&opt)
+	require.NoError(t, err)
+
+	objects, buildErr := BuildAll(opt)
+
+	require.NoError(t, buildErr)
+	require.Equal(t, 5, serviceMonitorCount(objects))
+
+	opt.Flags.EnableServiceMonitors = false
+	objects, buildErr = BuildAll(opt)
+
+	require.NoError(t, buildErr)
+	require.Equal(t, 0, serviceMonitorCount(objects))
+}
+
+func serviceMonitorCount(objects []client.Object) int {
+	monitors := 0
+	for _, obj := range objects {
+		if obj.GetObjectKind().GroupVersionKind().Kind == "ServiceMonitor"{
+			monitors++
+		}
+	}
+	return monitors
 }
