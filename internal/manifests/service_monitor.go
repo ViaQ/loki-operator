@@ -13,69 +13,69 @@ import (
 )
 
 // BuildServiceMonitors builds the service monitors
-func BuildServiceMonitors(opt Options) []client.Object {
+func BuildServiceMonitors(opts Options) []client.Object {
 	return []client.Object{
-		NewDistributorServiceMonitor(opt),
-		NewIngesterServiceMonitor(opt),
-		NewQuerierServiceMonitor(opt),
-		NewCompactorServiceMonitor(opt),
-		NewQueryFrontendServiceMonitor(opt),
+		NewDistributorServiceMonitor(opts),
+		NewIngesterServiceMonitor(opts),
+		NewQuerierServiceMonitor(opts),
+		NewCompactorServiceMonitor(opts),
+		NewQueryFrontendServiceMonitor(opts),
 	}
 }
 
 // NewDistributorServiceMonitor creates a k8s service monitor for the distributor component
-func NewDistributorServiceMonitor(opt Options) *monitoringv1.ServiceMonitor {
-	l := ComponentLabels(LabelDistributorComponent, opt.Name)
+func NewDistributorServiceMonitor(opts Options) *monitoringv1.ServiceMonitor {
+	l := ComponentLabels(LabelDistributorComponent, opts.Name)
 
-	serviceMonitorName := serviceMonitorName(DistributorName(opt.Name))
-	serviceName := serviceNameDistributorHTTP(opt.Name)
-	lokiEndpoint := serviceMonitorLokiEndPoint(opt.Name, serviceName, opt.Namespace, opt.EnableTLSServiceMonitorConfig)
+	serviceMonitorName := serviceMonitorName(DistributorName(opts.Name))
+	serviceName := serviceNameDistributorHTTP(opts.Name)
+	lokiEndpoint := serviceMonitorLokiEndPoint(opts.Name, serviceName, opts.Namespace, opts.Flags.EnableTLSServiceMonitorConfig)
 
-	return newServiceMonitor(opt.Namespace, serviceMonitorName, l, lokiEndpoint)
+	return newServiceMonitor(opts.Namespace, serviceMonitorName, l, lokiEndpoint)
 }
 
 // NewIngesterServiceMonitor creates a k8s service monitor for the ingester component
-func NewIngesterServiceMonitor(opt Options) *monitoringv1.ServiceMonitor {
-	l := ComponentLabels(LabelIngesterComponent, opt.Name)
+func NewIngesterServiceMonitor(opts Options) *monitoringv1.ServiceMonitor {
+	l := ComponentLabels(LabelIngesterComponent, opts.Name)
 
-	serviceMonitorName := serviceMonitorName(IngesterName(opt.Name))
-	serviceName := serviceNameIngesterHTTP(opt.Name)
-	lokiEndpoint := serviceMonitorLokiEndPoint(opt.Name, serviceName, opt.Namespace, opt.EnableTLSServiceMonitorConfig)
+	serviceMonitorName := serviceMonitorName(IngesterName(opts.Name))
+	serviceName := serviceNameIngesterHTTP(opts.Name)
+	lokiEndpoint := serviceMonitorLokiEndPoint(opts.Name, serviceName, opts.Namespace, opts.Flags.EnableTLSServiceMonitorConfig)
 
-	return newServiceMonitor(opt.Namespace, serviceMonitorName, l, lokiEndpoint)
+	return newServiceMonitor(opts.Namespace, serviceMonitorName, l, lokiEndpoint)
 }
 
 // NewQuerierServiceMonitor creates a k8s service monitor for the querier component
-func NewQuerierServiceMonitor(opt Options) *monitoringv1.ServiceMonitor {
-	l := ComponentLabels(LabelQuerierComponent, opt.Name)
+func NewQuerierServiceMonitor(opts Options) *monitoringv1.ServiceMonitor {
+	l := ComponentLabels(LabelQuerierComponent, opts.Name)
 
-	serviceMonitorName := serviceMonitorName(QuerierName(opt.Name))
-	serviceName := serviceNameQuerierHTTP(opt.Name)
-	lokiEndpoint := serviceMonitorLokiEndPoint(opt.Name, serviceName, opt.Namespace, opt.EnableTLSServiceMonitorConfig)
+	serviceMonitorName := serviceMonitorName(QuerierName(opts.Name))
+	serviceName := serviceNameQuerierHTTP(opts.Name)
+	lokiEndpoint := serviceMonitorLokiEndPoint(opts.Name, serviceName, opts.Namespace, opts.Flags.EnableTLSServiceMonitorConfig)
 
-	return newServiceMonitor(opt.Namespace, serviceMonitorName, l, lokiEndpoint)
+	return newServiceMonitor(opts.Namespace, serviceMonitorName, l, lokiEndpoint)
 }
 
 // NewCompactorServiceMonitor creates a k8s service monitor for the compactor component
-func NewCompactorServiceMonitor(opt Options) *monitoringv1.ServiceMonitor {
-	l := ComponentLabels(LabelCompactorComponent, opt.Name)
+func NewCompactorServiceMonitor(opts Options) *monitoringv1.ServiceMonitor {
+	l := ComponentLabels(LabelCompactorComponent, opts.Name)
 
-	serviceMonitorName := serviceMonitorName(CompactorName(opt.Name))
-	serviceName := serviceNameCompactorHTTP(opt.Name)
-	lokiEndpoint := serviceMonitorLokiEndPoint(opt.Name, serviceName, opt.Namespace, opt.EnableTLSServiceMonitorConfig)
+	serviceMonitorName := serviceMonitorName(CompactorName(opts.Name))
+	serviceName := serviceNameCompactorHTTP(opts.Name)
+	lokiEndpoint := serviceMonitorLokiEndPoint(opts.Name, serviceName, opts.Namespace, opts.Flags.EnableTLSServiceMonitorConfig)
 
-	return newServiceMonitor(opt.Namespace, serviceMonitorName, l, lokiEndpoint)
+	return newServiceMonitor(opts.Namespace, serviceMonitorName, l, lokiEndpoint)
 }
 
 // NewQueryFrontendServiceMonitor creates a k8s service monitor for the query-frontend component
-func NewQueryFrontendServiceMonitor(opt Options) *monitoringv1.ServiceMonitor {
-	l := ComponentLabels(LabelQueryFrontendComponent, opt.Name)
+func NewQueryFrontendServiceMonitor(opts Options) *monitoringv1.ServiceMonitor {
+	l := ComponentLabels(LabelQueryFrontendComponent, opts.Name)
 
-	serviceMonitorName := serviceMonitorName(QueryFrontendName(opt.Name))
-	serviceName := serviceNameQueryFrontendHTTP(opt.Name)
-	lokiEndpoint := serviceMonitorLokiEndPoint(opt.Name, serviceName, opt.Namespace, opt.EnableTLSServiceMonitorConfig)
+	serviceMonitorName := serviceMonitorName(QueryFrontendName(opts.Name))
+	serviceName := serviceNameQueryFrontendHTTP(opts.Name)
+	lokiEndpoint := serviceMonitorLokiEndPoint(opts.Name, serviceName, opts.Namespace, opts.Flags.EnableTLSServiceMonitorConfig)
 
-	return newServiceMonitor(opt.Namespace, serviceMonitorName, l, lokiEndpoint)
+	return newServiceMonitor(opts.Namespace, serviceMonitorName, l, lokiEndpoint)
 }
 
 func newServiceMonitor(namespace, serviceMonitorName string, labels labels.Set, endpoint monitoringv1.Endpoint) *monitoringv1.ServiceMonitor {

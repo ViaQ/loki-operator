@@ -15,15 +15,23 @@ import (
 )
 
 // BuildQueryFrontend returns a list of k8s objects for Loki QueryFrontend
-func BuildQueryFrontend(opt Options) (*appsv1.Deployment, []client.Object) {
-	return NewQueryFrontendDeployment(opt), []client.Object{
-		NewQueryFrontendGRPCService(opt),
-		NewQueryFrontendHTTPService(opt),
+func BuildQueryFrontend(opts Options) ([]client.Object, error) {
+	deployment := NewQueryFrontendDeployment(opts)
+	if opts.Flags.EnableTLSServiceMonitorConfig {
+		if err := configureQueryFrontendServiceMonitorPKI(deployment, opts.Name); err != nil {
+			return nil, err
+		}
 	}
+
+	return []client.Object{
+		deployment,
+		NewQueryFrontendGRPCService(opts),
+		NewQueryFrontendHTTPService(opts),
+	}, nil
 }
 
 // NewQueryFrontendDeployment creates a deployment object for a query-frontend
-func NewQueryFrontendDeployment(opt Options) *appsv1.Deployment {
+func NewQueryFrontendDeployment(opts Options) *appsv1.Deployment {
 	podSpec := corev1.PodSpec{
 		Volumes: []corev1.Volume{
 			{
@@ -31,7 +39,7 @@ func NewQueryFrontendDeployment(opt Options) *appsv1.Deployment {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: lokiConfigMapName(opt.Name),
+							Name: lokiConfigMapName(opts.Name),
 						},
 					},
 				},
@@ -45,11 +53,11 @@ func NewQueryFrontendDeployment(opt Options) *appsv1.Deployment {
 		},
 		Containers: []corev1.Container{
 			{
-				Image: opt.Image,
+				Image: opts.Image,
 				Name:  "loki-query-frontend",
 				Resources: corev1.ResourceRequirements{
-					Limits:   opt.ResourceRequirements.QueryFrontend.Limits,
-					Requests: opt.ResourceRequirements.QueryFrontend.Requests,
+					Limits:   opts.ResourceRequirements.QueryFrontend.Limits,
+					Requests: opts.ResourceRequirements.QueryFrontend.Requests,
 				},
 				Args: []string{
 					"-target=query-frontend",
@@ -105,13 +113,13 @@ func NewQueryFrontendDeployment(opt Options) *appsv1.Deployment {
 		},
 	}
 
-	if opt.Stack.Template != nil && opt.Stack.Template.QueryFrontend != nil {
-		podSpec.Tolerations = opt.Stack.Template.QueryFrontend.Tolerations
-		podSpec.NodeSelector = opt.Stack.Template.QueryFrontend.NodeSelector
+	if opts.Stack.Template != nil && opts.Stack.Template.QueryFrontend != nil {
+		podSpec.Tolerations = opts.Stack.Template.QueryFrontend.Tolerations
+		podSpec.NodeSelector = opts.Stack.Template.QueryFrontend.NodeSelector
 	}
 
-	l := ComponentLabels(LabelQueryFrontendComponent, opt.Name)
-	a := commonAnnotations(opt.ConfigSHA1)
+	l := ComponentLabels(LabelQueryFrontendComponent, opts.Name)
+	a := commonAnnotations(opts.ConfigSHA1)
 
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -119,17 +127,17 @@ func NewQueryFrontendDeployment(opt Options) *appsv1.Deployment {
 			APIVersion: appsv1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   QueryFrontendName(opt.Name),
+			Name:   QueryFrontendName(opts.Name),
 			Labels: l,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: pointer.Int32Ptr(opt.Stack.Template.QueryFrontend.Replicas),
+			Replicas: pointer.Int32Ptr(opts.Stack.Template.QueryFrontend.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels.Merge(l, GossipLabels()),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:        fmt.Sprintf("loki-query-frontend-%s", opt.Name),
+					Name:        fmt.Sprintf("loki-query-frontend-%s", opts.Name),
 					Labels:      labels.Merge(l, GossipLabels()),
 					Annotations: a,
 				},
@@ -143,8 +151,8 @@ func NewQueryFrontendDeployment(opt Options) *appsv1.Deployment {
 }
 
 // NewQueryFrontendGRPCService creates a k8s service for the query-frontend GRPC endpoint
-func NewQueryFrontendGRPCService(opt Options) *corev1.Service {
-	l := ComponentLabels(LabelQueryFrontendComponent, opt.Name)
+func NewQueryFrontendGRPCService(opts Options) *corev1.Service {
+	l := ComponentLabels(LabelQueryFrontendComponent, opts.Name)
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -152,7 +160,7 @@ func NewQueryFrontendGRPCService(opt Options) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameQueryFrontendGRPC(opt.Name),
+			Name:   serviceNameQueryFrontendGRPC(opts.Name),
 			Labels: l,
 		},
 		Spec: corev1.ServiceSpec{
@@ -169,10 +177,10 @@ func NewQueryFrontendGRPCService(opt Options) *corev1.Service {
 }
 
 // NewQueryFrontendHTTPService creates a k8s service for the query-frontend HTTP endpoint
-func NewQueryFrontendHTTPService(opt Options) *corev1.Service {
-	serviceName := serviceNameQueryFrontendHTTP(opt.Name)
-	l := ComponentLabels(LabelQueryFrontendComponent, opt.Name)
-	a := serviceAnnotations(serviceName, opt.EnableCertSigningService)
+func NewQueryFrontendHTTPService(opts Options) *corev1.Service {
+	serviceName := serviceNameQueryFrontendHTTP(opts.Name)
+	l := ComponentLabels(LabelQueryFrontendComponent, opts.Name)
+	a := serviceAnnotations(serviceName, opts.Flags.EnableCertificateSigningService)
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{

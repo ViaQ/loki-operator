@@ -13,9 +13,7 @@ type Options struct {
 	Image      string
 	ConfigSHA1 string
 
-	EnableServiceMonitors         bool
-	EnableCertSigningService      bool
-	EnableTLSServiceMonitorConfig bool
+	Flags FeatureFlags
 
 	Stack                lokiv1beta1.LokiStackSpec
 	ResourceRequirements internal.ComponentResources
@@ -30,4 +28,11 @@ type ObjectStorage struct {
 	Buckets         string
 	AccessKeyID     string
 	AccessKeySecret string
+}
+
+// FeatureFlags contains flags that activate various features
+type FeatureFlags struct {
+	EnableCertificateSigningService bool
+	EnableServiceMonitors           bool
+	EnableTLSServiceMonitorConfig   bool
 }

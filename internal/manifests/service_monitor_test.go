@@ -19,12 +19,17 @@ func TestServiceMonitorMatchLabels(t *testing.T) {
 		ServiceMonitor *monitoringv1.ServiceMonitor
 	}
 
+	flags := FeatureFlags{
+		EnableCertificateSigningService: true,
+		EnableServiceMonitors:           true,
+		EnableTLSServiceMonitorConfig:   true,
+	}
+
 	opt := Options{
-		Name:                          "test",
-		Namespace:                     "test",
-		Image:                         "test",
-		EnableServiceMonitors:         true,
-		EnableTLSServiceMonitorConfig: true,
+		Name:      "test",
+		Namespace: "test",
+		Image:     "test",
+		Flags:     flags,
 		Stack: lokiv1beta1.LokiStackSpec{
 			Size: lokiv1beta1.SizeOneXExtraSmall,
 			Template: &lokiv1beta1.LokiTemplateSpec{

@@ -22,15 +22,23 @@ const (
 )
 
 // BuildDistributor returns a list of k8s objects for Loki Distributor
-func BuildDistributor(opt Options) (*appsv1.Deployment, []client.Object) {
-	return NewDistributorDeployment(opt), []client.Object{
-		NewDistributorGRPCService(opt),
-		NewDistributorHTTPService(opt),
+func BuildDistributor(opts Options) ([]client.Object, error) {
+	deployment := NewDistributorDeployment(opts)
+	if opts.Flags.EnableTLSServiceMonitorConfig {
+		if err := configureDistributorServiceMonitorPKI(deployment, opts.Name); err != nil {
+			return nil, err
+		}
 	}
+
+	return []client.Object{
+		deployment,
+		NewDistributorGRPCService(opts),
+		NewDistributorHTTPService(opts),
+	}, nil
 }
 
 // NewDistributorDeployment creates a deployment object for a distributor
-func NewDistributorDeployment(opt Options) *appsv1.Deployment {
+func NewDistributorDeployment(opts Options) *appsv1.Deployment {
 	podSpec := corev1.PodSpec{
 		Volumes: []corev1.Volume{
 			{
@@ -38,7 +46,7 @@ func NewDistributorDeployment(opt Options) *appsv1.Deployment {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: lokiConfigMapName(opt.Name),
+							Name: lokiConfigMapName(opts.Name),
 						},
 					},
 				},
@@ -52,11 +60,11 @@ func NewDistributorDeployment(opt Options) *appsv1.Deployment {
 		},
 		Containers: []corev1.Container{
 			{
-				Image: opt.Image,
+				Image: opts.Image,
 				Name:  "loki-distributor",
 				Resources: corev1.ResourceRequirements{
-					Limits:   opt.ResourceRequirements.Distributor.Limits,
-					Requests: opt.ResourceRequirements.Distributor.Requests,
+					Limits:   opts.ResourceRequirements.Distributor.Limits,
+					Requests: opts.ResourceRequirements.Distributor.Requests,
 				},
 				Args: []string{
 					"-target=distributor",
@@ -116,13 +124,13 @@ func NewDistributorDeployment(opt Options) *appsv1.Deployment {
 		},
 	}
 
-	if opt.Stack.Template != nil && opt.Stack.Template.Distributor != nil {
-		podSpec.Tolerations = opt.Stack.Template.Distributor.Tolerations
-		podSpec.NodeSelector = opt.Stack.Template.Distributor.NodeSelector
+	if opts.Stack.Template != nil && opts.Stack.Template.Distributor != nil {
+		podSpec.Tolerations = opts.Stack.Template.Distributor.Tolerations
+		podSpec.NodeSelector = opts.Stack.Template.Distributor.NodeSelector
 	}
 
-	l := ComponentLabels(LabelDistributorComponent, opt.Name)
-	a := commonAnnotations(opt.ConfigSHA1)
+	l := ComponentLabels(LabelDistributorComponent, opts.Name)
+	a := commonAnnotations(opts.ConfigSHA1)
 
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -130,17 +138,17 @@ func NewDistributorDeployment(opt Options) *appsv1.Deployment {
 			APIVersion: appsv1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   DistributorName(opt.Name),
+			Name:   DistributorName(opts.Name),
 			Labels: l,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: pointer.Int32Ptr(opt.Stack.Template.Distributor.Replicas),
+			Replicas: pointer.Int32Ptr(opts.Stack.Template.Distributor.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels.Merge(l, GossipLabels()),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:        fmt.Sprintf("loki-distributor-%s", opt.Name),
+					Name:        fmt.Sprintf("loki-distributor-%s", opts.Name),
 					Labels:      labels.Merge(l, GossipLabels()),
 					Annotations: a,
 				},
@@ -154,8 +162,8 @@ func NewDistributorDeployment(opt Options) *appsv1.Deployment {
 }
 
 // NewDistributorGRPCService creates a k8s service for the distributor GRPC endpoint
-func NewDistributorGRPCService(opt Options) *corev1.Service {
-	l := ComponentLabels(LabelDistributorComponent, opt.Name)
+func NewDistributorGRPCService(opts Options) *corev1.Service {
+	l := ComponentLabels(LabelDistributorComponent, opts.Name)
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -163,7 +171,7 @@ func NewDistributorGRPCService(opt Options) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameDistributorGRPC(opt.Name),
+			Name:   serviceNameDistributorGRPC(opts.Name),
 			Labels: l,
 		},
 		Spec: corev1.ServiceSpec{
@@ -180,10 +188,10 @@ func NewDistributorGRPCService(opt Options) *corev1.Service {
 }
 
 // NewDistributorHTTPService creates a k8s service for the distributor HTTP endpoint
-func NewDistributorHTTPService(opt Options) *corev1.Service {
-	serviceName := serviceNameDistributorHTTP(opt.Name)
-	l := ComponentLabels(LabelDistributorComponent, opt.Name)
-	a := serviceAnnotations(serviceName, opt.EnableCertSigningService)
+func NewDistributorHTTPService(opts Options) *corev1.Service {
+	serviceName := serviceNameDistributorHTTP(opts.Name)
+	l := ComponentLabels(LabelDistributorComponent, opts.Name)
+	a := serviceAnnotations(serviceName, opts.Flags.EnableCertificateSigningService)
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{

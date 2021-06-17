@@ -48,12 +48,15 @@ func init() {
 }
 
 func main() {
-	var metricsAddr string
-	var enableLeaderElection bool
-	var probeAddr string
-	var enableCertSigning bool
-	var enableServiceMonitors bool
-	var enableTLSServiceMonitors bool
+	var (
+		metricsAddr              string
+		enableLeaderElection     bool
+		probeAddr                string
+		enableCertSigning        bool
+		enableServiceMonitors    bool
+		enableTLSServiceMonitors bool
+	)
+
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -86,17 +89,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	options := manifests.OpenshiftOptions{
+	featureFlags := manifests.FeatureFlags{
 		EnableCertificateSigningService: enableCertSigning,
 		EnableServiceMonitors:           enableServiceMonitors,
-		EnableTLSEnabledServiceMonitors: enableTLSServiceMonitors,
+		EnableTLSServiceMonitorConfig:   enableTLSServiceMonitors,
 	}
 
 	if err = (&controllers.LokiStackReconciler{
-		Client:  mgr.GetClient(),
-		Log:     log.WithName("controllers").WithName("LokiStack"),
-		Scheme:  mgr.GetScheme(),
-		Options: options,
+		Client: mgr.GetClient(),
+		Log:    log.WithName("controllers").WithName("LokiStack"),
+		Scheme: mgr.GetScheme(),
+		Flags:  featureFlags,
 	}).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create controller", "controller", "LokiStack")
 		os.Exit(1)

@@ -33,10 +33,10 @@ import (
 
 var (
 	scheme = runtime.NewScheme()
-	options = manifests.OpenshiftOptions{
+	flags  = manifests.FeatureFlags{
 		EnableCertificateSigningService: false,
 		EnableServiceMonitors:           false,
-		EnableTLSEnabledServiceMonitors: false,
+		EnableTLSServiceMonitorConfig:   false,
 	}
 
 	defaultSecret = corev1.Secret{
@@ -98,7 +98,7 @@ func TestCreateOrUpdateLokiStack_WhenGetReturnsNotFound_DoesNotError(t *testing.
 		return apierrors.NewNotFound(schema.GroupResource{}, "something wasn't found")
 	}
 
-	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, options)
+	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, flags)
 	require.NoError(t, err)
 
 	// make sure create was NOT called because the Get failed
@@ -119,7 +119,7 @@ func TestCreateOrUpdateLokiStack_WhenGetReturnsAnErrorOtherThanNotFound_ReturnsT
 		return badRequestErr
 	}
 
-	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, options)
+	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, flags)
 
 	require.Equal(t, badRequestErr, errors.Unwrap(err))
 
@@ -172,7 +172,7 @@ func TestCreateOrUpdateLokiStack_SetsNamespaceOnAllObjects(t *testing.T) {
 		return nil
 	}
 
-	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, options)
+	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, flags)
 	require.NoError(t, err)
 
 	// make sure create was called
@@ -246,7 +246,7 @@ func TestCreateOrUpdateLokiStack_SetsOwnerRefOnAllObjects(t *testing.T) {
 		return nil
 	}
 
-	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, options)
+	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, flags)
 	require.NoError(t, err)
 
 	// make sure create was called
@@ -295,7 +295,7 @@ func TestCreateOrUpdateLokiStack_WhenSetControllerRefInvalid_ContinueWithOtherOb
 		return nil
 	}
 
-	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, options)
+	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, flags)
 
 	// make sure error is returned to re-trigger reconciliation
 	require.Error(t, err)
@@ -387,7 +387,7 @@ func TestCreateOrUpdateLokiStack_WhenGetReturnsNoError_UpdateObjects(t *testing.
 		return nil
 	}
 
-	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, options)
+	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, flags)
 	require.NoError(t, err)
 
 	// make sure create not called
@@ -444,7 +444,7 @@ func TestCreateOrUpdateLokiStack_WhenCreateReturnsError_ContinueWithOtherObjects
 		return apierrors.NewTooManyRequestsError("too many create requests")
 	}
 
-	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, options)
+	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, flags)
 
 	// make sure error is returned to re-trigger reconciliation
 	require.Error(t, err)
@@ -542,7 +542,7 @@ func TestCreateOrUpdateLokiStack_WhenUpdateReturnsError_ContinueWithOtherObjects
 		return apierrors.NewTooManyRequestsError("too many create requests")
 	}
 
-	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, options)
+	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, flags)
 
 	// make sure error is returned to re-trigger reconciliation
 	require.Error(t, err)
@@ -589,7 +589,7 @@ func TestCreateOrUpdateLokiStack_WhenMissingSecret_SetDegraded(t *testing.T) {
 
 	k.StatusStub = func() client.StatusWriter { return sw }
 
-	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, options)
+	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, flags)
 
 	// make sure error is returned to re-trigger reconciliation
 	require.NoError(t, err)
@@ -644,7 +644,7 @@ func TestCreateOrUpdateLokiStack_WhenInvalidSecret_SetDegraded(t *testing.T) {
 
 	k.StatusStub = func() client.StatusWriter { return sw }
 
-	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, options)
+	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme, flags)
 
 	// make sure error is returned to re-trigger reconciliation
 	require.NoError(t, err)

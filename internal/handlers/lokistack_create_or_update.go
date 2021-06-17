@@ -23,7 +23,7 @@ import (
 )
 
 // CreateOrUpdateLokiStack handles LokiStack create and update events.
-func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client, s *runtime.Scheme, options manifests.OpenshiftOptions) error {
+func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client, s *runtime.Scheme, flags manifests.FeatureFlags) error {
 	ll := log.WithValues("lokistack", req.NamespacedName, "event", "createOrUpdate")
 
 	var stack lokiv1beta1.LokiStack
@@ -63,14 +63,12 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 
 	// Here we will translate the lokiv1beta1.LokiStack options into manifest options
 	opts := manifests.Options{
-		Name:                          req.Name,
-		Namespace:                     req.Namespace,
-		Image:                         img,
-		Stack:                         stack.Spec,
-		ObjectStorage:                 *storage,
-		EnableServiceMonitors:         options.EnableServiceMonitors,
-		EnableCertSigningService:      options.EnableCertificateSigningService,
-		EnableTLSServiceMonitorConfig: options.EnableTLSEnabledServiceMonitors,
+		Name:          req.Name,
+		Namespace:     req.Namespace,
+		Image:         img,
+		Stack:         stack.Spec,
+		Flags:         flags,
+		ObjectStorage: *storage,
 	}
 
 	ll.Info("begin building manifests")

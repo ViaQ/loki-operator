@@ -17,15 +17,23 @@ import (
 )
 
 // BuildCompactor builds the k8s objects required to run Loki Compactor.
-func BuildCompactor(opts Options) (*appsv1.StatefulSet, []client.Object) {
-	return NewCompactorStatefulSet(opts), []client.Object{
+func BuildCompactor(opts Options) ([]client.Object, error) {
+	statefulSet := NewCompactorStatefulSet(opts)
+	if opts.Flags.EnableTLSServiceMonitorConfig {
+		if err := configureCompactorServiceMonitorPKI(statefulSet, opts.Name); err != nil {
+			return nil, err
+		}
+	}
+
+	return []client.Object{
+		statefulSet,
 		NewCompactorGRPCService(opts),
 		NewCompactorHTTPService(opts),
-	}
+	}, nil
 }
 
 // NewCompactorStatefulSet creates a statefulset object for a compactor.
-func NewCompactorStatefulSet(opt Options) *appsv1.StatefulSet {
+func NewCompactorStatefulSet(opts Options) *appsv1.StatefulSet {
 	podSpec := corev1.PodSpec{
 		Volumes: []corev1.Volume{
 			{
@@ -33,7 +41,7 @@ func NewCompactorStatefulSet(opt Options) *appsv1.StatefulSet {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: lokiConfigMapName(opt.Name),
+							Name: lokiConfigMapName(opts.Name),
 						},
 					},
 				},
@@ -41,11 +49,11 @@ func NewCompactorStatefulSet(opt Options) *appsv1.StatefulSet {
 		},
 		Containers: []corev1.Container{
 			{
-				Image: opt.Image,
+				Image: opts.Image,
 				Name:  "loki-compactor",
 				Resources: corev1.ResourceRequirements{
-					Limits:   opt.ResourceRequirements.Compactor.Limits,
-					Requests: opt.ResourceRequirements.Compactor.Requests,
+					Limits:   opts.ResourceRequirements.Compactor.Limits,
+					Requests: opts.ResourceRequirements.Compactor.Requests,
 				},
 				Args: []string{
 					"-target=compactor",
@@ -101,13 +109,13 @@ func NewCompactorStatefulSet(opt Options) *appsv1.StatefulSet {
 		},
 	}
 
-	if opt.Stack.Template != nil && opt.Stack.Template.Compactor != nil {
-		podSpec.Tolerations = opt.Stack.Template.Compactor.Tolerations
-		podSpec.NodeSelector = opt.Stack.Template.Compactor.NodeSelector
+	if opts.Stack.Template != nil && opts.Stack.Template.Compactor != nil {
+		podSpec.Tolerations = opts.Stack.Template.Compactor.Tolerations
+		podSpec.NodeSelector = opts.Stack.Template.Compactor.NodeSelector
 	}
 
-	l := ComponentLabels(LabelCompactorComponent, opt.Name)
-	a := commonAnnotations(opt.ConfigSHA1)
+	l := ComponentLabels(LabelCompactorComponent, opts.Name)
+	a := commonAnnotations(opts.ConfigSHA1)
 
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
@@ -115,19 +123,19 @@ func NewCompactorStatefulSet(opt Options) *appsv1.StatefulSet {
 			APIVersion: appsv1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   CompactorName(opt.Name),
+			Name:   CompactorName(opts.Name),
 			Labels: l,
 		},
 		Spec: appsv1.StatefulSetSpec{
 			PodManagementPolicy:  appsv1.OrderedReadyPodManagement,
 			RevisionHistoryLimit: pointer.Int32Ptr(10),
-			Replicas:             pointer.Int32Ptr(opt.Stack.Template.Compactor.Replicas),
+			Replicas:             pointer.Int32Ptr(opts.Stack.Template.Compactor.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels.Merge(l, GossipLabels()),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:        fmt.Sprintf("loki-compactor-%s", opt.Name),
+					Name:        fmt.Sprintf("loki-compactor-%s", opts.Name),
 					Labels:      labels.Merge(l, GossipLabels()),
 					Annotations: a,
 				},
@@ -146,10 +154,10 @@ func NewCompactorStatefulSet(opt Options) *appsv1.StatefulSet {
 						},
 						Resources: corev1.ResourceRequirements{
 							Requests: map[corev1.ResourceName]resource.Quantity{
-								corev1.ResourceStorage: opt.ResourceRequirements.Compactor.PVCSize,
+								corev1.ResourceStorage: opts.ResourceRequirements.Compactor.PVCSize,
 							},
 						},
-						StorageClassName: pointer.StringPtr(opt.Stack.StorageClassName),
+						StorageClassName: pointer.StringPtr(opts.Stack.StorageClassName),
 					},
 				},
 			},
@@ -158,8 +166,8 @@ func NewCompactorStatefulSet(opt Options) *appsv1.StatefulSet {
 }
 
 // NewCompactorGRPCService creates a k8s service for the compactor GRPC endpoint
-func NewCompactorGRPCService(opt Options) *corev1.Service {
-	l := ComponentLabels(LabelCompactorComponent, opt.Name)
+func NewCompactorGRPCService(opts Options) *corev1.Service {
+	l := ComponentLabels(LabelCompactorComponent, opts.Name)
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -167,7 +175,7 @@ func NewCompactorGRPCService(opt Options) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameCompactorGRPC(opt.Name),
+			Name:   serviceNameCompactorGRPC(opts.Name),
 			Labels: l,
 		},
 		Spec: corev1.ServiceSpec{
@@ -184,10 +192,10 @@ func NewCompactorGRPCService(opt Options) *corev1.Service {
 }
 
 // NewCompactorHTTPService creates a k8s service for the ingester HTTP endpoint
-func NewCompactorHTTPService(opt Options) *corev1.Service {
-	serviceName := serviceNameCompactorHTTP(opt.Name)
-	l := ComponentLabels(LabelCompactorComponent, opt.Name)
-	a := serviceAnnotations(serviceName, opt.EnableCertSigningService)
+func NewCompactorHTTPService(opts Options) *corev1.Service {
+	serviceName := serviceNameCompactorHTTP(opts.Name)
+	l := ComponentLabels(LabelCompactorComponent, opts.Name)
+	a := serviceAnnotations(serviceName, opts.Flags.EnableCertificateSigningService)
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
