@@ -1,7 +1,6 @@
 package manifests
 
 import (
-	"fmt"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -124,8 +123,7 @@ func TestBuildAll_WithFeatureFlags_EnableServiceMonitors(t *testing.T) {
 	}
 
 	for _, tst := range table {
-		testName := fmt.Sprint(tst.desc)
-		t.Run(testName, func(t *testing.T) {
+		t.Run(tst.desc, func(t *testing.T) {
 			t.Parallel()
 
 			err := ApplyDefaultSettings(&tst.BuildOptions)
@@ -179,8 +177,7 @@ func TestBuildAll_WithFeatureFlags_EnableCertificateSigningService(t *testing.T)
 	}
 
 	for _, tst := range table {
-		testName := fmt.Sprint(tst.desc)
-		t.Run(testName, func(t *testing.T) {
+		t.Run(tst.desc, func(t *testing.T) {
 			t.Parallel()
 
 			err := ApplyDefaultSettings(&tst.BuildOptions)
