@@ -81,41 +81,50 @@ func TestApplyUserOptions_AlwaysSetCompactorReplicasToOne(t *testing.T) {
 	}
 }
 
-func TestBuildAll_DidBuildServiceMonitors(t *testing.T) {
+func TestBuildAll_WithFeatureFlags_EnableServiceMonitors(t *testing.T) {
 	type test struct {
+		desc         string
 		MonitorCount int
 		BuildOptions Options
 	}
 
-	enabledOpts := Options{
-		Name:      "test",
-		Namespace: "test",
-		Stack: lokiv1beta1.LokiStackSpec{
-			Size: lokiv1beta1.SizeOneXSmall,
-		},
-		Flags: FeatureFlags{
-			EnableCertificateSigningService: false,
-			EnableServiceMonitors:           true,
-			EnableTLSServiceMonitorConfig:   false,
-		},
-	}
-
-	disabledOpts := enabledOpts
-	disabledOpts.Flags.EnableServiceMonitors = false
-
 	table := []test{
 		{
+			desc:         "no service monitors created",
 			MonitorCount: 0,
-			BuildOptions: disabledOpts,
+			BuildOptions: Options{
+				Name:      "test",
+				Namespace: "test",
+				Stack: lokiv1beta1.LokiStackSpec{
+					Size: lokiv1beta1.SizeOneXSmall,
+				},
+				Flags: FeatureFlags{
+					EnableCertificateSigningService: false,
+					EnableServiceMonitors:           false,
+					EnableTLSServiceMonitorConfig:   false,
+				},
+			},
 		},
 		{
+			desc:         "service monitor per component created",
 			MonitorCount: 5,
-			BuildOptions: enabledOpts,
+			BuildOptions: Options{
+				Name:      "test",
+				Namespace: "test",
+				Stack: lokiv1beta1.LokiStackSpec{
+					Size: lokiv1beta1.SizeOneXSmall,
+				},
+				Flags: FeatureFlags{
+					EnableCertificateSigningService: false,
+					EnableServiceMonitors:           true,
+					EnableTLSServiceMonitorConfig:   false,
+				},
+			},
 		},
 	}
 
-	for index, tst := range table {
-		testName := fmt.Sprintf("%s_service_monitor_count_%v", tst.BuildOptions.Name, index)
+	for _, tst := range table {
+		testName := fmt.Sprint(tst.desc)
 		t.Run(testName, func(t *testing.T) {
 			t.Parallel()
 
@@ -130,38 +139,47 @@ func TestBuildAll_DidBuildServiceMonitors(t *testing.T) {
 	}
 }
 
-func TestBuildAll_DidAddCertSigningAnnotations(t *testing.T) {
+func TestBuildAll_WithFeatureFlags_EnableCertificateSigningService(t *testing.T) {
 	type test struct {
+		desc         string
 		BuildOptions Options
 	}
 
-	enabledOpts := Options{
-		Name:      "test",
-		Namespace: "test",
-		Stack: lokiv1beta1.LokiStackSpec{
-			Size: lokiv1beta1.SizeOneXSmall,
-		},
-		Flags: FeatureFlags{
-			EnableCertificateSigningService: true,
-			EnableServiceMonitors:           false,
-			EnableTLSServiceMonitorConfig:   false,
-		},
-	}
-
-	disabledOpts := enabledOpts
-	disabledOpts.Flags.EnableCertificateSigningService = false
-
 	table := []test{
 		{
-			BuildOptions: disabledOpts,
+			desc:         "disabled certificate signing service",
+			BuildOptions: Options{
+				Name:      "test",
+				Namespace: "test",
+				Stack: lokiv1beta1.LokiStackSpec{
+					Size: lokiv1beta1.SizeOneXSmall,
+				},
+				Flags: FeatureFlags{
+					EnableCertificateSigningService: false,
+					EnableServiceMonitors:           false,
+					EnableTLSServiceMonitorConfig:   false,
+				},
+			},
 		},
 		{
-			BuildOptions: enabledOpts,
+			desc:         "enabled certificate signing service for every http service",
+			BuildOptions: Options{
+				Name:      "test",
+				Namespace: "test",
+				Stack: lokiv1beta1.LokiStackSpec{
+					Size: lokiv1beta1.SizeOneXSmall,
+				},
+				Flags: FeatureFlags{
+					EnableCertificateSigningService: true,
+					EnableServiceMonitors:           false,
+					EnableTLSServiceMonitorConfig:   false,
+				},
+			},
 		},
 	}
 
-	for index, tst := range table {
-		testName := fmt.Sprintf("%s_service_monitor_count_%v", tst.BuildOptions.Name, index)
+	for _, tst := range table {
+		testName := fmt.Sprint(tst.desc)
 		t.Run(testName, func(t *testing.T) {
 			t.Parallel()
 
@@ -169,11 +187,11 @@ func TestBuildAll_DidAddCertSigningAnnotations(t *testing.T) {
 			require.NoError(t, err)
 
 			httpServices := []*corev1.Service{
-				 NewDistributorHTTPService(tst.BuildOptions),
-				 NewIngesterHTTPService(tst.BuildOptions),
-				 NewQuerierHTTPService(tst.BuildOptions),
-				 NewQueryFrontendHTTPService(tst.BuildOptions),
-				 NewCompactorHTTPService(tst.BuildOptions),
+				NewDistributorHTTPService(tst.BuildOptions),
+				NewIngesterHTTPService(tst.BuildOptions),
+				NewQuerierHTTPService(tst.BuildOptions),
+				NewQueryFrontendHTTPService(tst.BuildOptions),
+				NewCompactorHTTPService(tst.BuildOptions),
 			}
 
 			for _, service := range httpServices {

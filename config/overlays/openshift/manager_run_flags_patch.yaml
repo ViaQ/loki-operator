@@ -10,6 +10,6 @@ spec:
       containers:
         - name: manager
           args:
-          - "--with-ocp-features"
-          - "--with-service-monitors"
           - "--with-cert-signing-service"
+          - "--with-service-monitors"
+          - "--with-tls-service-monitors"
