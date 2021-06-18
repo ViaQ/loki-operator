@@ -123,6 +123,7 @@ func TestBuildAll_WithFeatureFlags_EnableServiceMonitors(t *testing.T) {
 	}
 
 	for _, tst := range table {
+		tst := tst
 		t.Run(tst.desc, func(t *testing.T) {
 			t.Parallel()
 
@@ -177,6 +178,7 @@ func TestBuildAll_WithFeatureFlags_EnableCertificateSigningService(t *testing.T)
 	}
 
 	for _, tst := range table {
+		tst := tst
 		t.Run(tst.desc, func(t *testing.T) {
 			t.Parallel()
 
