@@ -10,7 +10,7 @@ import (
 
 	lokiv1beta1 "github.com/ViaQ/loki-operator/api/v1beta1"
 	"github.com/ViaQ/loki-operator/internal/external/k8s"
-	"github.com/ViaQ/loki-operator/internal/handlers/internal/secrets"
+	"github.com/ViaQ/loki-operator/internal/handlers/internal/objectstorage"
 	"github.com/ViaQ/loki-operator/internal/manifests"
 	"github.com/ViaQ/loki-operator/internal/metrics"
 	"github.com/ViaQ/loki-operator/internal/status"
@@ -42,24 +42,38 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 	}
 
 	var s3secret corev1.Secret
-	key := client.ObjectKey{Name: stack.Spec.Storage.Secret.Name, Namespace: stack.Namespace}
-	if err := k.Get(ctx, key, &s3secret); err != nil {
+	var s3configMap corev1.ConfigMap
+
+	s3insecure := stack.Spec.Storage.Insecure
+	s3skipVerify := stack.Spec.Storage.InsecureSkipVerify
+
+	keySecret := client.ObjectKey{Name: stack.Spec.Storage.Secret.Name, Namespace: stack.Namespace}
+	keyConfigMap := client.ObjectKey{Name: stack.Spec.Storage.ConfigMap.Name, Namespace: stack.Namespace}
+
+	if err := k.Get(ctx, keySecret, &s3secret); err != nil {
 		if apierrors.IsNotFound(err) {
 			return status.SetDegradedCondition(ctx, k, req,
 				"Missing object storage secret",
 				lokiv1beta1.ReasonMissingObjectStorageSecret,
 			)
 		}
-		return kverrors.Wrap(err, "failed to lookup lokistack s3 secret", "name", key)
+		return kverrors.Wrap(err, "failed to lookup lokistack s3 secret", "name", keySecret)
 	}
 
-	storage, err := secrets.Extract(&s3secret)
+	if err := k.Get(ctx, keyConfigMap, &s3configMap); err != nil {
+		// assume all the required information was inside the secret
+		s3configMap = corev1.ConfigMap{}
+	}
+	storage, err := objectstorage.Extract(&s3secret, &s3configMap, s3insecure)
 	if err != nil {
 		return status.SetDegradedCondition(ctx, k, req,
-			"Invalid object storage secret contents",
+			"Invalid object storage configuration contents",
 			lokiv1beta1.ReasonInvalidObjectStorageSecret,
 		)
 	}
+
+	storage.Insecure = s3insecure
+	storage.InsecureSkipVerify = s3skipVerify
 
 	// Here we will translate the lokiv1beta1.LokiStack options into manifest options
 	opts := manifests.Options{

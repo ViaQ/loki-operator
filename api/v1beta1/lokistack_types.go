@@ -145,6 +145,16 @@ type ObjectStorageSecretSpec struct {
 	Name string `json:"name"`
 }
 
+// ObjectStorageConfigMapSpec is a config map reference containing name only, no namespace.
+type ObjectStorageConfigMapSpec struct {
+	// Name of a config map in the namespace configured for object storage secrets.
+	//
+	// +required
+	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:ConfigMap",displayName="Object Storage Config Map"
+	Name string `json:"name"`
+}
+
 // ObjectStorageSpec defines the requirements to access the object
 // storage bucket to persist logs by the ingester component.
 type ObjectStorageSpec struct {
@@ -154,6 +164,27 @@ type ObjectStorageSpec struct {
 	// +required
 	// +kubebuilder:validation:Required
 	Secret ObjectStorageSecretSpec `json:"secret"`
+
+	// Config map for object storage authentication.
+	// Name of a config map in the same namespace as the cluster logging operator.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	ConfigMap ObjectStorageConfigMapSpec `json:"configMap"`
+
+	// Disable https for object storage connection
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=false
+	Insecure bool `json:"insecure"`
+
+	// Skip https certificate veryfication
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=false
+	InsecureSkipVerify bool `json:"insecureSkipVerify"`
 }
 
 // QueryLimitSpec defines the limits applies at the query path.

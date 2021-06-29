@@ -21,9 +21,11 @@ type Options struct {
 
 // ObjectStorage for storage config.
 type ObjectStorage struct {
-	Endpoint        string
-	Region          string
-	Buckets         string
-	AccessKeyID     string
-	AccessKeySecret string
+	Endpoint           string
+	Region             string
+	Buckets            string
+	AccessKeyID        string
+	AccessKeySecret    string
+	Insecure           bool
+	InsecureSkipVerify bool
 }

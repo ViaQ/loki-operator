@@ -131,5 +131,8 @@ storage_config:
     access_key_id: {{ .ObjectStorage.AccessKeyID }}
     secret_access_key: {{ .ObjectStorage.AccessKeySecret }}
     s3forcepathstyle: true
+    insecure: {{ .ObjectStorage.Insecure }}
+    http_config:
+      insecure_skip_verify: {{ .ObjectStorage.InsecureSkipVerify }}
 tracing:
   enabled: false

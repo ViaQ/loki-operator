@@ -47,6 +47,30 @@ var (
 		},
 	}
 
+	ocsSecret = corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "some-ocs-stack-secret",
+			Namespace: "some-ns",
+		},
+		Data: map[string][]byte{
+			"AWS_ACCESS_KEY_ID":     []byte("a-secret-id"),
+			"AWS_SECRET_ACCESS_KEY": []byte("a-secret-key"),
+		},
+	}
+
+	ocsConfigMap = corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "some-ocs-stack-config-map",
+			Namespace: "some-ns",
+		},
+		Data: map[string]string{
+			"BUCKET_HOST":   "a-secret-id",
+			"BUCKET_NAME":   "a-secret-key",
+			"BUCKET_PORT":   "a-secret-key",
+			"BUCKET_REGION": "a-secret-key",
+		},
+	}
+
 	invalidSecret = corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "some-stack-secret",
@@ -617,6 +641,119 @@ func TestCreateOrUpdateLokiStack_WhenInvalidSecret_SetDegraded(t *testing.T) {
 			Storage: lokiv1beta1.ObjectStorageSpec{
 				Secret: lokiv1beta1.ObjectStorageSecretSpec{
 					Name: invalidSecret.Name,
+				},
+			},
+		},
+	}
+
+	// GetStub looks up the CR first, so we need to return our fake stack
+	// return NotFound for everything else to trigger create.
+	k.GetStub = func(_ context.Context, name types.NamespacedName, object client.Object) error {
+		if r.Name == name.Name && r.Namespace == name.Namespace {
+			k.SetClientObject(object, stack)
+			return nil
+		}
+		if name.Name == invalidSecret.Name {
+			k.SetClientObject(object, &invalidSecret)
+			return nil
+		}
+		return apierrors.NewNotFound(schema.GroupResource{}, "something is not found")
+	}
+
+	k.StatusStub = func() client.StatusWriter { return sw }
+
+	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme)
+
+	// make sure error is returned to re-trigger reconciliation
+	require.NoError(t, err)
+
+	// make sure status and status-update calls
+	require.NotZero(t, k.StatusCallCount())
+	require.NotZero(t, sw.UpdateCallCount())
+}
+
+func TestCreateOrUpdateLokiStack_WhenUsingOcsSecretAndNoConfigMap_SetDegraded(t *testing.T) {
+	sw := &k8sfakes.FakeStatusWriter{}
+	k := &k8sfakes.FakeClient{}
+	r := ctrl.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "my-stack",
+			Namespace: "some-ns",
+		},
+	}
+
+	stack := &lokiv1beta1.LokiStack{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "LokiStack",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-stack",
+			Namespace: "some-ns",
+			UID:       "b23f9a38-9672-499f-8c29-15ede74d3ece",
+		},
+		Spec: lokiv1beta1.LokiStackSpec{
+			Size: lokiv1beta1.SizeOneXExtraSmall,
+			Storage: lokiv1beta1.ObjectStorageSpec{
+				Secret: lokiv1beta1.ObjectStorageSecretSpec{
+					Name: ocsSecret.Name,
+				},
+			},
+		},
+	}
+
+	// GetStub looks up the CR first, so we need to return our fake stack
+	// return NotFound for everything else to trigger create.
+	k.GetStub = func(_ context.Context, name types.NamespacedName, object client.Object) error {
+		if r.Name == name.Name && r.Namespace == name.Namespace {
+			k.SetClientObject(object, stack)
+			return nil
+		}
+		if name.Name == invalidSecret.Name {
+			k.SetClientObject(object, &invalidSecret)
+			return nil
+		}
+		return apierrors.NewNotFound(schema.GroupResource{}, "something is not found")
+	}
+
+	k.StatusStub = func() client.StatusWriter { return sw }
+
+	err := handlers.CreateOrUpdateLokiStack(context.TODO(), r, k, scheme)
+
+	// make sure error is returned to re-trigger reconciliation
+	require.NoError(t, err)
+
+	// make sure status and status-update calls
+	require.NotZero(t, k.StatusCallCount())
+	require.NotZero(t, sw.UpdateCallCount())
+}
+
+func TestCreateOrUpdateLokiStack_WhenUsingOcsSecretWithOcsConfigMap_DoesNotError(t *testing.T) {
+	sw := &k8sfakes.FakeStatusWriter{}
+	k := &k8sfakes.FakeClient{}
+	r := ctrl.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      "my-stack",
+			Namespace: "some-ns",
+		},
+	}
+
+	stack := &lokiv1beta1.LokiStack{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "LokiStack",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-stack",
+			Namespace: "some-ns",
+			UID:       "b23f9a38-9672-499f-8c29-15ede74d3ece",
+		},
+		Spec: lokiv1beta1.LokiStackSpec{
+			Size: lokiv1beta1.SizeOneXExtraSmall,
+			Storage: lokiv1beta1.ObjectStorageSpec{
+				Secret: lokiv1beta1.ObjectStorageSecretSpec{
+					Name: ocsSecret.Name,
+				},
+				ConfigMap: lokiv1beta1.ObjectStorageConfigMapSpec{
+					Name: ocsConfigMap.Name,
 				},
 			},
 		},

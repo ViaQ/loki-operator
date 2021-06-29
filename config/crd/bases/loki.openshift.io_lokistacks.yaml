@@ -208,6 +208,26 @@ spec:
                 description: Storage defines the spec for the object storage endpoint
                   to store logs.
                 properties:
+                  configMap:
+                    description: Config map for object storage authentication. Name
+                      of a config map in the same namespace as the cluster logging
+                      operator.
+                    properties:
+                      name:
+                        description: Name of a config map in the namespace configured
+                          for object storage secrets.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  insecure:
+                    default: false
+                    description: Disable https for object storage connection
+                    type: boolean
+                  insecureSkipVerify:
+                    default: false
+                    description: Skip https certificate veryfication
+                    type: boolean
                   secret:
                     description: Secret for object storage authentication. Name of
                       a secret in the same namespace as the cluster logging operator.

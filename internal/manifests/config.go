@@ -61,11 +61,13 @@ func ConfigOptions(opt Options) config.Options {
 		},
 		StorageDirectory: strings.TrimRight(dataDirectory, "/"),
 		ObjectStorage: config.ObjectStorage{
-			Endpoint:        opt.ObjectStorage.Endpoint,
-			Buckets:         opt.ObjectStorage.Buckets,
-			Region:          opt.ObjectStorage.Region,
-			AccessKeyID:     opt.ObjectStorage.AccessKeyID,
-			AccessKeySecret: opt.ObjectStorage.AccessKeySecret,
+			Endpoint:           opt.ObjectStorage.Endpoint,
+			Buckets:            opt.ObjectStorage.Buckets,
+			Region:             opt.ObjectStorage.Region,
+			AccessKeyID:        opt.ObjectStorage.AccessKeyID,
+			AccessKeySecret:    opt.ObjectStorage.AccessKeySecret,
+			Insecure:           opt.ObjectStorage.Insecure,
+			InsecureSkipVerify: opt.ObjectStorage.InsecureSkipVerify,
 		},
 		QueryParallelism: config.Parallelism{
 			QuerierCPULimits:      opt.ResourceRequirements.Querier.Requests.Cpu().Value(),

@@ -1,0 +1,14 @@
+apiVersion: loki.openshift.io/v1beta1
+kind: LokiStack
+metadata:
+  name: lokistack-sample-ocs
+spec:
+  size: 1x.extra-small
+  replicationFactor: 1
+  storage:
+    secret:
+      name: loki-s3-storage
+    configMap:
+      name: loki-s3-storage
+    insecureSkipVerify: true
+  storageClassName: standard

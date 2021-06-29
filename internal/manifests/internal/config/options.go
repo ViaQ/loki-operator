@@ -30,11 +30,13 @@ type Address struct {
 
 // ObjectStorage for storage config.
 type ObjectStorage struct {
-	Endpoint        string
-	Region          string
-	Buckets         string
-	AccessKeyID     string
-	AccessKeySecret string
+	Endpoint           string
+	Region             string
+	Buckets            string
+	AccessKeyID        string
+	AccessKeySecret    string
+	Insecure           bool
+	InsecureSkipVerify bool
 }
 
 // Parallelism for query processing parallelism
