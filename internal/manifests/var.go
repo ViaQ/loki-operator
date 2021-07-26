@@ -16,6 +16,9 @@ const (
 	// DefaultContainerImage declares the default fallback for loki image.
 	DefaultContainerImage = "docker.io/grafana/loki:2.2.1"
 
+	// DefaultLokiStackGatewayImage declares the default image for lokiStack-gateway.
+	DefaultLokiStackGatewayImage = "quay.io/observatorium/api:latest"
+
 	// PrometheusCAFile declares the path for prometheus CA file for service monitors.
 	PrometheusCAFile string = "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt"
 	// BearerTokenFile declares the path for bearer token file for service monitors.
@@ -36,6 +39,8 @@ const (
 	LabelQuerierComponent string = "querier"
 	// LabelQueryFrontendComponent is the label value for the query frontend component
 	LabelQueryFrontendComponent string = "query-frontend"
+	// LabelLokiStackGatewayComponent is the label value for the lokiStack-gateway component
+	LabelLokiStackGatewayComponent string = "lokistack-gateway"
 )
 
 func commonAnnotations(h string) map[string]string {
@@ -97,6 +102,11 @@ func QuerierName(stackName string) string {
 // QueryFrontendName is the name of the query-frontend statefulset
 func QueryFrontendName(stackName string) string {
 	return fmt.Sprintf("loki-query-frontend-%s", stackName)
+}
+
+// LokiStackGatewayName is the name of the lokiStack-gateway statefulset
+func LokiStackGatewayName(stackName string) string {
+	return fmt.Sprintf("lokistack-gateway-%s", stackName)
 }
 
 func serviceNameQuerierHTTP(stackName string) string {

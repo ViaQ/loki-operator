@@ -2,6 +2,7 @@ resources:
 - ../../crd
 - ../../rbac
 - ../../manager
+- ../../gateway
 - ./minio
 
 # Adds namespace to all resources.

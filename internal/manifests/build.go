@@ -52,6 +52,8 @@ func BuildAll(opts Options) ([]client.Object, error) {
 	res = append(res, queryFrontendObjs...)
 	res = append(res, BuildLokiGossipRingService(opts.Name))
 
+	res = append(res, BuildLokiStackGateway(opts))
+
 	if opts.Flags.EnableServiceMonitors {
 		res = append(res, BuildServiceMonitors(opts)...)
 	}
