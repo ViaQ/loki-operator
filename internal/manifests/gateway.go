@@ -36,7 +36,7 @@ func NewLokiStackGatewayDeployment(opts Options) *appsv1.Deployment {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: labelObservatoriumApi,
+							Name: LabelLokiStackGatewayComponent,
 						},
 					},
 				},
@@ -46,7 +46,7 @@ func NewLokiStackGatewayDeployment(opts Options) *appsv1.Deployment {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: labelObservatoriumApi,
+							Name: LabelLokiStackGatewayComponent,
 						},
 					},
 				},
@@ -62,7 +62,7 @@ func NewLokiStackGatewayDeployment(opts Options) *appsv1.Deployment {
 					"--web.internal.listen=0.0.0.0:8081",
 					"--log.level=debug",
 					fmt.Sprintf("--logs.read.endpoint=http://%s:%d", fqdn(serviceNameQueryFrontendHTTP(opts.Name), opts.Namespace), httpPort),
-					fmt.Sprintf("--logs.tail.endpoint=http://%s:%d", fqdn(serviceNameQuerierHTTP(opts.Name), opts.Namespace), httpPort),
+					fmt.Sprintf("--logs.tail.endpoint=http://%s:%d", fqdn(serviceNameQueryFrontendHTTP(opts.Name), opts.Namespace), httpPort),
 					fmt.Sprintf("--logs.write.endpoint=http://%s:%d", fqdn(serviceNameDistributorHTTP(opts.Name), opts.Namespace), httpPort),
 					fmt.Sprintf("--rbac.config=%s", path.Join(gateway.LokiGatewayMountDir, gateway.LokiGatewayRbacFileName)),
 					fmt.Sprintf("--tenants.config=%s", path.Join(gateway.LokiGatewayMountDir, gateway.LokiGatewayTenantFileName)),
@@ -82,13 +82,13 @@ func NewLokiStackGatewayDeployment(opts Options) *appsv1.Deployment {
 					{
 						Name:      "rbac",
 						ReadOnly:  true,
-						MountPath: fmt.Sprintf("%s", path.Join(gateway.LokiGatewayMountDir, gateway.LokiGatewayRbacFileName)),
+						MountPath: path.Join(gateway.LokiGatewayMountDir, gateway.LokiGatewayRbacFileName),
 						SubPath:   "rbac.yaml",
 					},
 					{
 						Name:      "tenants",
 						ReadOnly:  true,
-						MountPath: fmt.Sprintf("%s", path.Join(gateway.LokiGatewayMountDir, gateway.LokiGatewayTenantFileName)),
+						MountPath: path.Join(gateway.LokiGatewayMountDir, gateway.LokiGatewayTenantFileName),
 						SubPath:   "tenants.yaml",
 					},
 				},
@@ -152,6 +152,7 @@ func NewLokiStackGatewayDeployment(opts Options) *appsv1.Deployment {
 	}
 }
 
+// GatewayConfigMap creates a configMap for rbac.yaml and tenants.yaml
 func GatewayConfigMap(opt Options) (*corev1.ConfigMap, error) {
 	cfg := GatewayConfigOptions(opt)
 	rbacConfig, tenantsConfig, err := gateway.Build(cfg)
@@ -164,7 +165,7 @@ func GatewayConfigMap(opt Options) (*corev1.ConfigMap, error) {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   labelObservatoriumApi,
+			Name:   LabelLokiStackGatewayComponent,
 			Labels: commonLabels(opt.Name),
 		},
 		BinaryData: map[string][]byte{
