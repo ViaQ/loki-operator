@@ -26,6 +26,9 @@ const (
 
 	// labelJobComponent is a ServiceMonitor.Spec.JobLabel.
 	labelJobComponent string = "loki.grafana.com/component"
+
+	// labelObservatoriumApi is the name in loki gateway configMap
+	labelObservatoriumApi = "observatorium-api"
 )
 
 const (
