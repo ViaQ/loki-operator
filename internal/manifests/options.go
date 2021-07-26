@@ -12,6 +12,7 @@ type Options struct {
 	Namespace  string
 	Image      string
 	ConfigSHA1 string
+	GatewaySHA1 string
 
 	Flags FeatureFlags
 

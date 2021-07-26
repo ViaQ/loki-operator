@@ -1,6 +1,7 @@
 package manifests
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"path"
 
@@ -16,15 +17,15 @@ import (
 )
 
 // BuildLokiStackGateway returns a list of k8s objects for Loki Stack Gateway
-func BuildLokiStackGateway(opts Options) ([]client.Object, error) {
-	gatewayConfigMap, err := GatewayConfigMap(opts)
+func BuildLokiStackGateway(opts Options) ([]client.Object, string, error) {
+	gatewayConfigMap, sha1C, err := GatewayConfigMap(opts)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	return []client.Object{
 		gatewayConfigMap,
 		NewLokiStackGatewayDeployment(opts),
-	}, nil
+	}, sha1C, nil
 }
 
 // NewLokiStackGatewayDeployment creates a deployment object for a lokiStack-gateway
@@ -153,12 +154,20 @@ func NewLokiStackGatewayDeployment(opts Options) *appsv1.Deployment {
 }
 
 // GatewayConfigMap creates a configMap for rbac.yaml and tenants.yaml
-func GatewayConfigMap(opt Options) (*corev1.ConfigMap, error) {
+func GatewayConfigMap(opt Options) (*corev1.ConfigMap, string, error) {
 	cfg := GatewayConfigOptions(opt)
 	rbacConfig, tenantsConfig, err := gateway.Build(cfg)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
+
+	s := sha1.New()
+	_, err = s.Write(rbacConfig)
+	if err != nil {
+		return nil, "", err
+	}
+	sha1C := fmt.Sprintf("%x", s.Sum(nil))
+
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -172,7 +181,7 @@ func GatewayConfigMap(opt Options) (*corev1.ConfigMap, error) {
 			gateway.LokiGatewayRbacFileName:   rbacConfig,
 			gateway.LokiGatewayTenantFileName: tenantsConfig,
 		},
-	}, nil
+	}, sha1C, nil
 }
 
 // GatewayConfigOptions converts Options to gateway.Options

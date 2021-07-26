@@ -44,10 +44,11 @@ func BuildAll(opts Options) ([]client.Object, error) {
 		return nil, err
 	}
 
-	gatewayObjects, err := BuildLokiStackGateway(opts)
+	gatewayObjects, gatewaySHA1, err := BuildLokiStackGateway(opts)
 	if err != nil {
 		return nil, err
 	}
+	opts.GatewaySHA1 = gatewaySHA1
 
 	res = append(res, cm)
 	res = append(res, distributorObjs...)
