@@ -16,6 +16,8 @@ const (
 	LokiGatewayRbacFileName = "rbac.yaml"
 	// LokiGatewayMountDir is the path that is mounted from the configmap
 	LokiGatewayMountDir = "/etc/lokistack-gateway"
+	// LokiGatewayTLSDir is the path that is mounted from the configmap for TLS
+	LokiGatewayTLSDir = "/var/run/tls"
 )
 
 var (

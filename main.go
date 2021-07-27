@@ -49,12 +49,14 @@ func init() {
 
 func main() {
 	var (
-		metricsAddr              string
-		enableLeaderElection     bool
-		probeAddr                string
-		enableCertSigning        bool
-		enableServiceMonitors    bool
-		enableTLSServiceMonitors bool
+		metricsAddr               string
+		enableLeaderElection      bool
+		probeAddr                 string
+		enableCertSigning         bool
+		enableServiceMonitors     bool
+		enableTLSServiceMonitors  bool
+		enableLokiStackGateway    bool
+		enableTLSLokiStackGateway bool
 	)
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -67,6 +69,9 @@ func main() {
 	flag.BoolVar(&enableServiceMonitors, "with-service-monitors", false, "Enables service monitoring")
 	flag.BoolVar(&enableTLSServiceMonitors, "with-tls-service-monitors", false,
 		"Enables loading of a prometheus service monitor.")
+	flag.BoolVar(&enableLokiStackGateway, "with-lokistack-gateway", false, "Enables lokiStack gateway")
+	flag.BoolVar(&enableTLSLokiStackGateway, "with-tls-lokistack-gateway", false,
+		"Enables loading of a lokiStack gateway.")
 	flag.Parse()
 
 	log.Init("loki-operator")
@@ -93,6 +98,8 @@ func main() {
 		EnableCertificateSigningService: enableCertSigning,
 		EnableServiceMonitors:           enableServiceMonitors,
 		EnableTLSServiceMonitorConfig:   enableTLSServiceMonitors,
+		EnableLokiStackGateway:          enableLokiStackGateway,
+		EnableTLSLokiStackGateway:       enableTLSLokiStackGateway,
 	}
 
 	if err = (&controllers.LokiStackReconciler{

@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/ViaQ/logerr/kverrors"
+	"github.com/imdario/mergo"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/ViaQ/loki-operator/internal/manifests/internal/gateway"
@@ -22,9 +25,17 @@ func BuildLokiStackGateway(opts Options) ([]client.Object, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
+
+	deployment := NewLokiStackGatewayDeployment(opts)
+	if opts.Flags.EnableTLSLokiStackGateway {
+		if err := configureLokiStackGatewayPKI(&deployment.Spec.Template.Spec); err != nil {
+			return nil, "", err
+		}
+	}
+
 	return []client.Object{
 		gatewayConfigMap,
-		NewLokiStackGatewayDeployment(opts),
+		deployment,
 	}, sha1C, nil
 }
 
@@ -68,7 +79,6 @@ func NewLokiStackGatewayDeployment(opts Options) *appsv1.Deployment {
 					fmt.Sprintf("--rbac.config=%s", path.Join(gateway.LokiGatewayMountDir, gateway.LokiGatewayRbacFileName)),
 					fmt.Sprintf("--tenants.config=%s", path.Join(gateway.LokiGatewayMountDir, gateway.LokiGatewayTenantFileName)),
 				},
-				WorkingDir: gateway.LokiGatewayMountDir,
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "internal",
@@ -191,4 +201,66 @@ func GatewayConfigOptions(opt Options) gateway.Options {
 		Namespace: opt.Namespace,
 		Name:      opt.Name,
 	}
+}
+
+func configureLokiStackGatewayPKI(podSpec *corev1.PodSpec) error {
+	secretVolumeSpec := corev1.PodSpec{
+		Volumes: []corev1.Volume{
+			{
+				Name: "tls-secret",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: LabelLokiStackGatewayComponent,
+					},
+				},
+			},
+			{
+				Name: "tls-configmap",
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: LabelLokiStackGatewayComponent,
+						},
+					},
+				},
+			},
+		},
+	}
+	secretContainerSpec := corev1.Container{
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      "tls-secret",
+				ReadOnly:  true,
+				MountPath: path.Join(gateway.LokiGatewayTLSDir, "cert"),
+				SubPath:   "cert",
+			},
+			{
+				Name:      "tls-secret",
+				ReadOnly:  true,
+				MountPath: path.Join(gateway.LokiGatewayTLSDir, "key"),
+				SubPath:   "key",
+			},
+			{
+				Name:      "tls-configmap",
+				ReadOnly:  true,
+				MountPath: path.Join(gateway.LokiGatewayTLSDir, "ca"),
+				SubPath:   "ca",
+			},
+		},
+		Args: []string{
+			fmt.Sprintf("--tls.server.cert-file=%s", path.Join(gateway.LokiGatewayTLSDir, "cert")),
+			fmt.Sprintf("--tls.server.key-file=%s", path.Join(gateway.LokiGatewayTLSDir, "key")),
+			fmt.Sprintf("--tls.healthchecks.server-ca-file=%s", path.Join(gateway.LokiGatewayTLSDir, "ca")),
+		},
+	}
+
+	if err := mergo.Merge(podSpec, secretVolumeSpec, mergo.WithAppendSlice); err != nil {
+		return kverrors.Wrap(err, "failed to merge volumes")
+	}
+
+	if err := mergo.Merge(&podSpec.Containers[0], secretContainerSpec, mergo.WithAppendSlice); err != nil {
+		return kverrors.Wrap(err, "failed to merge container")
+	}
+
+	return nil
 }

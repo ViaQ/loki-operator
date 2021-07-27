@@ -44,12 +44,6 @@ func BuildAll(opts Options) ([]client.Object, error) {
 		return nil, err
 	}
 
-	gatewayObjects, gatewaySHA1, err := BuildLokiStackGateway(opts)
-	if err != nil {
-		return nil, err
-	}
-	opts.GatewaySHA1 = gatewaySHA1
-
 	res = append(res, cm)
 	res = append(res, distributorObjs...)
 	res = append(res, ingesterObjs...)
@@ -58,7 +52,15 @@ func BuildAll(opts Options) ([]client.Object, error) {
 	res = append(res, queryFrontendObjs...)
 	res = append(res, BuildLokiGossipRingService(opts.Name))
 
-	res = append(res, gatewayObjects...)
+	if opts.Flags.EnableLokiStackGateway {
+		gatewayObjects, gatewaySHA1, err := BuildLokiStackGateway(opts)
+		if err != nil {
+			return nil, err
+		}
+		opts.GatewaySHA1 = gatewaySHA1
+
+		res = append(res, gatewayObjects...)
+	}
 
 	if opts.Flags.EnableServiceMonitors {
 		res = append(res, BuildServiceMonitors(opts)...)
