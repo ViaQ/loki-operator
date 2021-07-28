@@ -21,7 +21,7 @@ import (
 
 // BuildLokiStackGateway returns a list of k8s objects for Loki Stack Gateway
 func BuildLokiStackGateway(opts Options) ([]client.Object, error) {
-	gatewayCm, sha1C, err := gatewayConfigMap(opts)
+	gatewayCm, sha1C, err := GatewayConfigMap(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -163,8 +163,8 @@ func NewLokiStackGatewayDeployment(opts Options, sha1C string) *appsv1.Deploymen
 	}
 }
 
-// gatewayConfigMap creates a configMap for rbac.yaml and tenants.yaml
-func gatewayConfigMap(opt Options) (*corev1.ConfigMap, string, error) {
+// GatewayConfigMap creates a configMap for rbac.yaml and tenants.yaml
+func GatewayConfigMap(opt Options) (*corev1.ConfigMap, string, error) {
 	cfg := gatewayConfigOptions(opt)
 	rbacConfig, tenantsConfig, err := gateway.Build(cfg)
 	if err != nil {

@@ -204,6 +204,58 @@ func TestBuildAll_WithFeatureFlags_EnableCertificateSigningService(t *testing.T)
 	}
 }
 
+func TestBuildAll_WithFeatureFlags_EnableLokiStackGateway(t *testing.T) {
+	type test struct {
+		desc         string
+		BuildOptions Options
+	}
+	table := []test{
+		{
+			desc: "no lokistack-gateway created",
+			BuildOptions: Options{
+				Name:      "test",
+				Namespace: "test",
+				Stack: lokiv1beta1.LokiStackSpec{
+					Size: lokiv1beta1.SizeOneXSmall,
+				},
+				Flags: FeatureFlags{
+					EnableLokiStackGateway:            false,
+					EnableLokiStackGatewayTLSListener: false,
+				},
+			},
+		},
+		{
+			desc: "lokistack-gateway created",
+			BuildOptions: Options{
+				Name:      "test",
+				Namespace: "test",
+				Stack: lokiv1beta1.LokiStackSpec{
+					Size: lokiv1beta1.SizeOneXSmall,
+				},
+				Flags: FeatureFlags{
+					EnableLokiStackGateway:            true,
+					EnableLokiStackGatewayTLSListener: true,
+				},
+			},
+		},
+	}
+	for _, tst := range table {
+		tst := tst
+		t.Run(tst.desc, func(t *testing.T) {
+			t.Parallel()
+			err := ApplyDefaultSettings(&tst.BuildOptions)
+			require.NoError(t, err)
+			objects, buildErr := BuildAll(tst.BuildOptions)
+			require.NoError(t, buildErr)
+			if tst.BuildOptions.Flags.EnableLokiStackGateway {
+				require.True(t, checkLokiStackGatewayDeployed(objects, tst.BuildOptions.Name))
+			} else {
+				require.False(t, checkLokiStackGatewayDeployed(objects, tst.BuildOptions.Name))
+			}
+		})
+	}
+}
+
 func serviceMonitorCount(objects []client.Object) int {
 	monitors := 0
 	for _, obj := range objects {
@@ -212,4 +264,14 @@ func serviceMonitorCount(objects []client.Object) int {
 		}
 	}
 	return monitors
+}
+
+func checkLokiStackGatewayDeployed(objects []client.Object, stackName string) bool {
+	for _, obj := range objects {
+		if obj.GetObjectKind().GroupVersionKind().Kind == "Deployment" &&
+			obj.GetName() == LokiStackGatewayName(stackName) {
+			return true
+		}
+	}
+	return false
 }
