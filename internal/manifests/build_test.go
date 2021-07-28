@@ -204,7 +204,7 @@ func TestBuildAll_WithFeatureFlags_EnableCertificateSigningService(t *testing.T)
 	}
 }
 
-func TestBuildAll_WithFeatureFlags_EnableLokiStackGateway(t *testing.T) {
+func TestBuildAll_WithFeatureFlags_EnableGateway(t *testing.T) {
 	type test struct {
 		desc         string
 		BuildOptions Options
@@ -219,8 +219,8 @@ func TestBuildAll_WithFeatureFlags_EnableLokiStackGateway(t *testing.T) {
 					Size: lokiv1beta1.SizeOneXSmall,
 				},
 				Flags: FeatureFlags{
-					EnableLokiStackGateway:            false,
-					EnableLokiStackGatewayTLSListener: false,
+					EnableGateway:            false,
+					EnableGatewayTLSListener: false,
 				},
 			},
 		},
@@ -233,8 +233,8 @@ func TestBuildAll_WithFeatureFlags_EnableLokiStackGateway(t *testing.T) {
 					Size: lokiv1beta1.SizeOneXSmall,
 				},
 				Flags: FeatureFlags{
-					EnableLokiStackGateway:            true,
-					EnableLokiStackGatewayTLSListener: true,
+					EnableGateway:            true,
+					EnableGatewayTLSListener: true,
 				},
 			},
 		},
@@ -247,10 +247,10 @@ func TestBuildAll_WithFeatureFlags_EnableLokiStackGateway(t *testing.T) {
 			require.NoError(t, err)
 			objects, buildErr := BuildAll(tst.BuildOptions)
 			require.NoError(t, buildErr)
-			if tst.BuildOptions.Flags.EnableLokiStackGateway {
-				require.True(t, checkLokiStackGatewayDeployed(objects, tst.BuildOptions.Name))
+			if tst.BuildOptions.Flags.EnableGateway {
+				require.True(t, checkGatewayDeployed(objects, tst.BuildOptions.Name))
 			} else {
-				require.False(t, checkLokiStackGatewayDeployed(objects, tst.BuildOptions.Name))
+				require.False(t, checkGatewayDeployed(objects, tst.BuildOptions.Name))
 			}
 		})
 	}
@@ -266,7 +266,7 @@ func serviceMonitorCount(objects []client.Object) int {
 	return monitors
 }
 
-func checkLokiStackGatewayDeployed(objects []client.Object, stackName string) bool {
+func checkGatewayDeployed(objects []client.Object, stackName string) bool {
 	for _, obj := range objects {
 		if obj.GetObjectKind().GroupVersionKind().Kind == "Deployment" &&
 			obj.GetName() == LokiStackGatewayName(stackName) {

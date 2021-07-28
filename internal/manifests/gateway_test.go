@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewLokiStackGatewayDeployment_HasTemplateConfigHashAnnotation(t *testing.T) {
+func TestNewGatewayDeployment_HasTemplateConfigHashAnnotation(t *testing.T) {
 	sha1C := "deadbeef"
-	ss := NewLokiStackGatewayDeployment(Options{
+	ss := NewGatewayDeployment(Options{
 		Name:      "abcd",
 		Namespace: "efgh",
 		Stack: lokiv1beta1.LokiStackSpec{
@@ -67,7 +67,7 @@ func TestGatewayConfigMap_ReturnsSHA1OfBinaryContents(t *testing.T) {
 		},
 	}
 
-	_, sha1C, err := GatewayConfigMap(opts)
+	_, sha1C, err := gatewayConfigMap(opts)
 	require.NoError(t, err)
 	require.NotEmpty(t, sha1C)
 }

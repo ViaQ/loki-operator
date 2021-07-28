@@ -32,9 +32,9 @@ type ObjectStorage struct {
 
 // FeatureFlags contains flags that activate various features
 type FeatureFlags struct {
-	EnableCertificateSigningService   bool
-	EnableServiceMonitors             bool
-	EnableTLSServiceMonitorConfig     bool
-	EnableLokiStackGateway            bool
-	EnableLokiStackGatewayTLSListener bool
+	EnableCertificateSigningService bool
+	EnableServiceMonitors           bool
+	EnableTLSServiceMonitorConfig   bool
+	EnableGateway                   bool
+	EnableGatewayTLSListener        bool
 }

@@ -19,16 +19,16 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-// BuildLokiStackGateway returns a list of k8s objects for Loki Stack Gateway
-func BuildLokiStackGateway(opts Options) ([]client.Object, error) {
-	gatewayCm, sha1C, err := GatewayConfigMap(opts)
+// BuildGateway returns a list of k8s objects for Loki Stack Gateway
+func BuildGateway(opts Options) ([]client.Object, error) {
+	gatewayCm, sha1C, err := gatewayConfigMap(opts)
 	if err != nil {
 		return nil, err
 	}
 
-	deployment := NewLokiStackGatewayDeployment(opts, sha1C)
-	if opts.Flags.EnableLokiStackGatewayTLSListener {
-		if err := configureLokiStackGatewayPKI(&deployment.Spec.Template.Spec); err != nil {
+	deployment := NewGatewayDeployment(opts, sha1C)
+	if opts.Flags.EnableGatewayTLSListener {
+		if err := configureGatewayPKI(&deployment.Spec.Template.Spec); err != nil {
 			return nil, err
 		}
 	}
@@ -39,8 +39,8 @@ func BuildLokiStackGateway(opts Options) ([]client.Object, error) {
 	}, nil
 }
 
-// NewLokiStackGatewayDeployment creates a deployment object for a lokiStack-gateway
-func NewLokiStackGatewayDeployment(opts Options, sha1C string) *appsv1.Deployment {
+// NewGatewayDeployment creates a deployment object for a lokiStack-gateway
+func NewGatewayDeployment(opts Options, sha1C string) *appsv1.Deployment {
 	podSpec := corev1.PodSpec{
 		Volumes: []corev1.Volume{
 			{
@@ -163,8 +163,8 @@ func NewLokiStackGatewayDeployment(opts Options, sha1C string) *appsv1.Deploymen
 	}
 }
 
-// GatewayConfigMap creates a configMap for rbac.yaml and tenants.yaml
-func GatewayConfigMap(opt Options) (*corev1.ConfigMap, string, error) {
+// gatewayConfigMap creates a configMap for rbac.yaml and tenants.yaml
+func gatewayConfigMap(opt Options) (*corev1.ConfigMap, string, error) {
 	cfg := gatewayConfigOptions(opt)
 	rbacConfig, tenantsConfig, err := gateway.Build(cfg)
 	if err != nil {
@@ -203,7 +203,7 @@ func gatewayConfigOptions(opt Options) gateway.Options {
 	}
 }
 
-func configureLokiStackGatewayPKI(podSpec *corev1.PodSpec) error {
+func configureGatewayPKI(podSpec *corev1.PodSpec) error {
 	secretVolumeSpec := corev1.PodSpec{
 		Volumes: []corev1.Volume{
 			{
