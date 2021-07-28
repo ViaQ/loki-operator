@@ -53,11 +53,10 @@ func BuildAll(opts Options) ([]client.Object, error) {
 	res = append(res, BuildLokiGossipRingService(opts.Name))
 
 	if opts.Flags.EnableLokiStackGateway {
-		gatewayObjects, gatewaySHA1, err := BuildLokiStackGateway(opts)
+		gatewayObjects, err := BuildLokiStackGateway(opts)
 		if err != nil {
 			return nil, err
 		}
-		opts.GatewaySHA1 = gatewaySHA1
 
 		res = append(res, gatewayObjects...)
 	}

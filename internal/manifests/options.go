@@ -8,11 +8,10 @@ import (
 // Options is a set of configuration values to use when building manifests such as resource sizes, etc.
 // Most of this should be provided - either directly or indirectly - by the user.
 type Options struct {
-	Name        string
-	Namespace   string
-	Image       string
-	ConfigSHA1  string
-	GatewaySHA1 string
+	Name       string
+	Namespace  string
+	Image      string
+	ConfigSHA1 string
 
 	Flags FeatureFlags
 
@@ -33,9 +32,9 @@ type ObjectStorage struct {
 
 // FeatureFlags contains flags that activate various features
 type FeatureFlags struct {
-	EnableCertificateSigningService bool
-	EnableServiceMonitors           bool
-	EnableTLSServiceMonitorConfig   bool
-	EnableLokiStackGateway          bool
-	EnableTLSLokiStackGateway       bool
+	EnableCertificateSigningService   bool
+	EnableServiceMonitors             bool
+	EnableTLSServiceMonitorConfig     bool
+	EnableLokiStackGateway            bool
+	EnableLokiStackGatewayTLSListener bool
 }

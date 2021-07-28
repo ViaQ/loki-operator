@@ -20,27 +20,27 @@ import (
 )
 
 // BuildLokiStackGateway returns a list of k8s objects for Loki Stack Gateway
-func BuildLokiStackGateway(opts Options) ([]client.Object, string, error) {
-	gatewayConfigMap, sha1C, err := GatewayConfigMap(opts)
+func BuildLokiStackGateway(opts Options) ([]client.Object, error) {
+	gatewayCm, sha1C, err := gatewayConfigMap(opts)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	deployment := NewLokiStackGatewayDeployment(opts)
-	if opts.Flags.EnableTLSLokiStackGateway {
+	deployment := NewLokiStackGatewayDeployment(opts, sha1C)
+	if opts.Flags.EnableLokiStackGatewayTLSListener {
 		if err := configureLokiStackGatewayPKI(&deployment.Spec.Template.Spec); err != nil {
-			return nil, "", err
+			return nil, err
 		}
 	}
 
 	return []client.Object{
-		gatewayConfigMap,
+		gatewayCm,
 		deployment,
-	}, sha1C, nil
+	}, nil
 }
 
 // NewLokiStackGatewayDeployment creates a deployment object for a lokiStack-gateway
-func NewLokiStackGatewayDeployment(opts Options) *appsv1.Deployment {
+func NewLokiStackGatewayDeployment(opts Options, sha1C string) *appsv1.Deployment {
 	podSpec := corev1.PodSpec{
 		Volumes: []corev1.Volume{
 			{
@@ -132,7 +132,7 @@ func NewLokiStackGatewayDeployment(opts Options) *appsv1.Deployment {
 	}
 
 	l := ComponentLabels(LabelLokiStackGatewayComponent, opts.Name)
-	a := commonAnnotations(opts.ConfigSHA1)
+	a := commonAnnotations(sha1C)
 
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -163,9 +163,9 @@ func NewLokiStackGatewayDeployment(opts Options) *appsv1.Deployment {
 	}
 }
 
-// GatewayConfigMap creates a configMap for rbac.yaml and tenants.yaml
-func GatewayConfigMap(opt Options) (*corev1.ConfigMap, string, error) {
-	cfg := GatewayConfigOptions(opt)
+// gatewayConfigMap creates a configMap for rbac.yaml and tenants.yaml
+func gatewayConfigMap(opt Options) (*corev1.ConfigMap, string, error) {
+	cfg := gatewayConfigOptions(opt)
 	rbacConfig, tenantsConfig, err := gateway.Build(cfg)
 	if err != nil {
 		return nil, "", err
@@ -194,8 +194,8 @@ func GatewayConfigMap(opt Options) (*corev1.ConfigMap, string, error) {
 	}, sha1C, nil
 }
 
-// GatewayConfigOptions converts Options to gateway.Options
-func GatewayConfigOptions(opt Options) gateway.Options {
+// gatewayConfigOptions converts Options to gateway.Options
+func gatewayConfigOptions(opt Options) gateway.Options {
 	return gateway.Options{
 		Stack:     opt.Stack,
 		Namespace: opt.Namespace,

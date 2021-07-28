@@ -49,14 +49,14 @@ func init() {
 
 func main() {
 	var (
-		metricsAddr               string
-		enableLeaderElection      bool
-		probeAddr                 string
-		enableCertSigning         bool
-		enableServiceMonitors     bool
-		enableTLSServiceMonitors  bool
-		enableLokiStackGateway    bool
-		enableTLSLokiStackGateway bool
+		metricsAddr                       string
+		enableLeaderElection              bool
+		probeAddr                         string
+		enableCertSigning                 bool
+		enableServiceMonitors             bool
+		enableTLSServiceMonitors          bool
+		enableLokiStackGateway            bool
+		enableLokiStackGatewayTLSListener bool
 	)
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -69,9 +69,10 @@ func main() {
 	flag.BoolVar(&enableServiceMonitors, "with-service-monitors", false, "Enables service monitoring")
 	flag.BoolVar(&enableTLSServiceMonitors, "with-tls-service-monitors", false,
 		"Enables loading of a prometheus service monitor.")
-	flag.BoolVar(&enableLokiStackGateway, "with-lokistack-gateway", false, "Enables lokiStack gateway")
-	flag.BoolVar(&enableTLSLokiStackGateway, "with-tls-lokistack-gateway", false,
-		"Enables loading of a lokiStack gateway.")
+	flag.BoolVar(&enableLokiStackGateway, "with-lokistack-gateway", false,
+		"Enables the manifest creation for the entire lokistack-gateway.")
+	flag.BoolVar(&enableLokiStackGatewayTLSListener, "with-lokistack-gateway-tls-listener", false,
+		"Configure the lokistack-gateway TLS listener.")
 	flag.Parse()
 
 	log.Init("loki-operator")
@@ -95,11 +96,11 @@ func main() {
 	}
 
 	featureFlags := manifests.FeatureFlags{
-		EnableCertificateSigningService: enableCertSigning,
-		EnableServiceMonitors:           enableServiceMonitors,
-		EnableTLSServiceMonitorConfig:   enableTLSServiceMonitors,
-		EnableLokiStackGateway:          enableLokiStackGateway,
-		EnableTLSLokiStackGateway:       enableTLSLokiStackGateway,
+		EnableCertificateSigningService:   enableCertSigning,
+		EnableServiceMonitors:             enableServiceMonitors,
+		EnableTLSServiceMonitorConfig:     enableTLSServiceMonitors,
+		EnableLokiStackGateway:            enableLokiStackGateway,
+		EnableLokiStackGatewayTLSListener: enableLokiStackGatewayTLSListener,
 	}
 
 	if err = (&controllers.LokiStackReconciler{
