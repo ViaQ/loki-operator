@@ -33,9 +33,16 @@ func BuildGateway(opts Options) ([]client.Object, error) {
 		}
 	}
 
+	if opts.Flags.EnableTLSServiceMonitorConfig {
+		if err := configureGatewayServiceMonitorPKI(deployment, opts.Name); err != nil {
+			return nil, err
+		}
+	}
+
 	return []client.Object{
 		gatewayCm,
 		deployment,
+		NewGatewayHTTPService(opts),
 	}, nil
 }
 
@@ -48,7 +55,7 @@ func NewGatewayDeployment(opts Options, sha1C string) *appsv1.Deployment {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: LabelLokiStackGatewayComponent,
+							Name: LabelGatewayComponent,
 						},
 					},
 				},
@@ -58,7 +65,7 @@ func NewGatewayDeployment(opts Options, sha1C string) *appsv1.Deployment {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: LabelLokiStackGatewayComponent,
+							Name: LabelGatewayComponent,
 						},
 					},
 				},
@@ -66,10 +73,14 @@ func NewGatewayDeployment(opts Options, sha1C string) *appsv1.Deployment {
 		},
 		Containers: []corev1.Container{
 			{
-				Name:  LabelLokiStackGatewayComponent,
+				Name:  LabelGatewayComponent,
 				Image: DefaultLokiStackGatewayImage,
+				Resources: corev1.ResourceRequirements{
+					Limits:   opts.ResourceRequirements.Gateway.Limits,
+					Requests: opts.ResourceRequirements.Gateway.Requests,
+				},
 				Args: []string{
-					fmt.Sprintf("--debug.name=%s", LabelLokiStackGatewayComponent),
+					fmt.Sprintf("--debug.name=%s", LabelGatewayComponent),
 					"--web.listen=0.0.0.0:8080",
 					"--web.internal.listen=0.0.0.0:8081",
 					"--log.level=debug",
@@ -87,6 +98,10 @@ func NewGatewayDeployment(opts Options, sha1C string) *appsv1.Deployment {
 					{
 						Name:          "public",
 						ContainerPort: 8080,
+					},
+					{
+						Name:          "metrics",
+						ContainerPort: httpPort,
 					},
 				},
 				VolumeMounts: []corev1.VolumeMount{
@@ -131,7 +146,7 @@ func NewGatewayDeployment(opts Options, sha1C string) *appsv1.Deployment {
 		},
 	}
 
-	l := ComponentLabels(LabelLokiStackGatewayComponent, opts.Name)
+	l := ComponentLabels(LabelGatewayComponent, opts.Name)
 	a := commonAnnotations(sha1C)
 
 	return &appsv1.Deployment{
@@ -140,7 +155,7 @@ func NewGatewayDeployment(opts Options, sha1C string) *appsv1.Deployment {
 			APIVersion: appsv1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   LokiStackGatewayName(opts.Name),
+			Name:   GatewayName(opts.Name),
 			Labels: l,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -150,7 +165,7 @@ func NewGatewayDeployment(opts Options, sha1C string) *appsv1.Deployment {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:        LokiStackGatewayName(opts.Name),
+					Name:        GatewayName(opts.Name),
 					Labels:      labels.Merge(l, GossipLabels()),
 					Annotations: a,
 				},
@@ -159,6 +174,34 @@ func NewGatewayDeployment(opts Options, sha1C string) *appsv1.Deployment {
 			Strategy: appsv1.DeploymentStrategy{
 				Type: appsv1.RollingUpdateDeploymentStrategyType,
 			},
+		},
+	}
+}
+
+// NewGatewayHTTPService creates a k8s service for the lokistack-gateway HTTP endpoint
+func NewGatewayHTTPService(opts Options) *corev1.Service {
+	serviceName := serviceNameGatewayHTTP(opts.Name)
+	l := ComponentLabels(LabelGatewayComponent, opts.Name)
+	a := serviceAnnotations(serviceName, opts.Flags.EnableCertificateSigningService)
+
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: corev1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        serviceName,
+			Labels:      l,
+			Annotations: a,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name: "metrics",
+					Port: httpPort,
+				},
+			},
+			Selector: l,
 		},
 	}
 }
@@ -184,7 +227,7 @@ func gatewayConfigMap(opt Options) (*corev1.ConfigMap, string, error) {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   LabelLokiStackGatewayComponent,
+			Name:   LabelGatewayComponent,
 			Labels: commonLabels(opt.Name),
 		},
 		BinaryData: map[string][]byte{
@@ -210,7 +253,7 @@ func configureGatewayPKI(podSpec *corev1.PodSpec) error {
 				Name: "tls-secret",
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: LabelLokiStackGatewayComponent,
+						SecretName: LabelGatewayComponent,
 					},
 				},
 			},
@@ -219,7 +262,7 @@ func configureGatewayPKI(podSpec *corev1.PodSpec) error {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: LabelLokiStackGatewayComponent,
+							Name: LabelGatewayComponent,
 						},
 					},
 				},
@@ -263,4 +306,9 @@ func configureGatewayPKI(podSpec *corev1.PodSpec) error {
 	}
 
 	return nil
+}
+
+func configureGatewayServiceMonitorPKI(deployment *appsv1.Deployment, stackName string) error {
+	serviceName := serviceNameGatewayHTTP(stackName)
+	return configureServiceMonitorPKI(&deployment.Spec.Template.Spec, serviceName)
 }

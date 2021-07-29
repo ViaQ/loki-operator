@@ -39,8 +39,8 @@ const (
 	LabelQuerierComponent string = "querier"
 	// LabelQueryFrontendComponent is the label value for the query frontend component
 	LabelQueryFrontendComponent string = "query-frontend"
-	// LabelLokiStackGatewayComponent is the label value for the lokiStack-gateway component
-	LabelLokiStackGatewayComponent string = "lokistack-gateway"
+	// LabelGatewayComponent is the label value for the lokiStack-gateway component
+	LabelGatewayComponent string = "lokistack-gateway"
 )
 
 func commonAnnotations(h string) map[string]string {
@@ -104,8 +104,8 @@ func QueryFrontendName(stackName string) string {
 	return fmt.Sprintf("loki-query-frontend-%s", stackName)
 }
 
-// LokiStackGatewayName is the name of the lokiStack-gateway statefulset
-func LokiStackGatewayName(stackName string) string {
+// GatewayName is the name of the lokiStack-gateway statefulset
+func GatewayName(stackName string) string {
 	return fmt.Sprintf("lokistack-gateway-%s", stackName)
 }
 
@@ -147,6 +147,10 @@ func serviceNameQueryFrontendGRPC(stackName string) string {
 
 func serviceNameQueryFrontendHTTP(stackName string) string {
 	return fmt.Sprintf("loki-query-frontend-http-%s", stackName)
+}
+
+func serviceNameGatewayHTTP(stackName string) string {
+	return fmt.Sprintf("lokistack-gateway-http-%s", stackName)
 }
 
 func serviceMonitorName(componentName string) string {

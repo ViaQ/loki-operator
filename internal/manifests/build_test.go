@@ -106,7 +106,7 @@ func TestBuildAll_WithFeatureFlags_EnableServiceMonitors(t *testing.T) {
 		},
 		{
 			desc:         "service monitor per component created",
-			MonitorCount: 5,
+			MonitorCount: 6,
 			BuildOptions: Options{
 				Name:      "test",
 				Namespace: "test",
@@ -191,6 +191,7 @@ func TestBuildAll_WithFeatureFlags_EnableCertificateSigningService(t *testing.T)
 				NewQuerierHTTPService(tst.BuildOptions),
 				NewQueryFrontendHTTPService(tst.BuildOptions),
 				NewCompactorHTTPService(tst.BuildOptions),
+				NewGatewayHTTPService(tst.BuildOptions),
 			}
 
 			for _, service := range httpServices {
@@ -269,7 +270,7 @@ func serviceMonitorCount(objects []client.Object) int {
 func checkGatewayDeployed(objects []client.Object, stackName string) bool {
 	for _, obj := range objects {
 		if obj.GetObjectKind().GroupVersionKind().Kind == "Deployment" &&
-			obj.GetName() == LokiStackGatewayName(stackName) {
+			obj.GetName() == GatewayName(stackName) {
 			return true
 		}
 	}
