@@ -67,7 +67,7 @@ func TestExtract(t *testing.T) {
 		t.Run(tst.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := secrets.Extract(tst.secret)
+			_, _, err := secrets.Extract(tst.secret)
 			if !tst.wantErr {
 				require.NoError(t, err)
 			}

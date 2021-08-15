@@ -49,6 +49,12 @@ func commonAnnotations(h string) map[string]string {
 	}
 }
 
+func storageAnnotations(h string) map[string]string {
+	return map[string]string{
+		"loki.openshift.io/storage-hash": h,
+	}
+}
+
 func commonLabels(stackName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":     "loki",

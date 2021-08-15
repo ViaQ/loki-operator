@@ -20,6 +20,10 @@ import (
 	"context"
 	"time"
 
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+
 	"github.com/ViaQ/loki-operator/controllers/internal/management/state"
 	"github.com/ViaQ/loki-operator/internal/external/k8s"
 	"github.com/ViaQ/loki-operator/internal/handlers"
@@ -76,9 +80,10 @@ var (
 // LokiStackReconciler reconciles a LokiStack object
 type LokiStackReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
-	Flags  manifests.FeatureFlags
+	Log                 logr.Logger
+	Scheme              *runtime.Scheme
+	Flags               manifests.FeatureFlags
+	DependentObjectsMap map[types.NamespacedName]types.NamespacedName
 }
 
 // +kubebuilder:rbac:groups=loki.openshift.io,resources=lokistacks,verbs=get;list;watch;create;update;patch;delete
@@ -98,7 +103,13 @@ type LokiStackReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
-func (r *LokiStackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *LokiStackReconciler) Reconcile(ctx context.Context, orgReq ctrl.Request) (ctrl.Result, error) {
+	// Initiate reconcile relevant loki stack from dependent objects (e.g. secrets, configmaps)
+	req := orgReq
+	if val, ok := r.DependentObjectsMap[req.NamespacedName]; ok {
+		req = ctrl.Request{NamespacedName: val}
+	}
+
 	ok, err := state.IsManaged(ctx, req, r.Client)
 	if err != nil {
 		return ctrl.Result{
@@ -112,7 +123,7 @@ func (r *LokiStackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, nil
 	}
 
-	err = handlers.CreateOrUpdateLokiStack(ctx, req, r.Client, r.Scheme, r.Flags)
+	err = handlers.CreateOrUpdateLokiStack(ctx, req, r.Client, r.Scheme, r.Flags, r.DependentObjectsMap)
 	if err != nil {
 		return ctrl.Result{
 			Requeue:      true,
@@ -134,6 +145,7 @@ func (r *LokiStackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 // SetupWithManager sets up the controller with the Manager.
 func (r *LokiStackReconciler) SetupWithManager(mgr manager.Manager) error {
 	b := ctrl.NewControllerManagedBy(mgr)
+	b.Watches(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{})
 	return r.buildController(k8s.NewCtrlBuilder(b))
 }
 

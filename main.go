@@ -20,6 +20,8 @@ import (
 	"flag"
 	"os"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/ViaQ/logerr/log"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -96,10 +98,11 @@ func main() {
 	}
 
 	if err = (&controllers.LokiStackReconciler{
-		Client: mgr.GetClient(),
-		Log:    log.WithName("controllers").WithName("LokiStack"),
-		Scheme: mgr.GetScheme(),
-		Flags:  featureFlags,
+		Client:              mgr.GetClient(),
+		Log:                 log.WithName("controllers").WithName("LokiStack"),
+		Scheme:              mgr.GetScheme(),
+		Flags:               featureFlags,
+		DependentObjectsMap: map[types.NamespacedName]types.NamespacedName{},
 	}).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create controller", "controller", "LokiStack")
 		os.Exit(1)

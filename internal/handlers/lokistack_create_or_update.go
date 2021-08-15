@@ -7,6 +7,7 @@ import (
 
 	"github.com/ViaQ/logerr/kverrors"
 	"github.com/ViaQ/logerr/log"
+	"k8s.io/apimachinery/pkg/types"
 
 	lokiv1beta1 "github.com/ViaQ/loki-operator/api/v1beta1"
 	"github.com/ViaQ/loki-operator/internal/external/k8s"
@@ -23,7 +24,7 @@ import (
 )
 
 // CreateOrUpdateLokiStack handles LokiStack create and update events.
-func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client, s *runtime.Scheme, flags manifests.FeatureFlags) error {
+func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client, s *runtime.Scheme, flags manifests.FeatureFlags, dependentObjectsMap map[types.NamespacedName]types.NamespacedName) error {
 	ll := log.WithValues("lokistack", req.NamespacedName, "event", "createOrUpdate")
 
 	var stack lokiv1beta1.LokiStack
@@ -53,13 +54,16 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 		return kverrors.Wrap(err, "failed to lookup lokistack s3 secret", "name", key)
 	}
 
-	storage, err := secrets.Extract(&s3secret)
+	storage, sha1Storage, err := secrets.Extract(&s3secret)
 	if err != nil {
 		return status.SetDegradedCondition(ctx, k, req,
 			"Invalid object storage secret contents",
 			lokiv1beta1.ReasonInvalidObjectStorageSecret,
 		)
 	}
+
+	// save secret to DependentObjectsMap (changes to secret will trigger stack update)
+	dependentObjectsMap[types.NamespacedName{Namespace: req.Namespace, Name: stack.Spec.Storage.Secret.Name}] = req.NamespacedName
 
 	// Here we will translate the lokiv1beta1.LokiStack options into manifest options
 	opts := manifests.Options{
@@ -69,6 +73,7 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 		Stack:         stack.Spec,
 		Flags:         flags,
 		ObjectStorage: *storage,
+		StorageSHA1:   sha1Storage,
 	}
 
 	ll.Info("begin building manifests")
@@ -111,7 +116,7 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 			continue
 		}
 
-		l.Info(fmt.Sprintf("Resource has been %s", op))
+		l.Info(fmt.Sprintf("Resource %s/%s has been %s", obj.GetObjectKind(), obj.GetName(), op))
 	}
 
 	if errCount > 0 {
