@@ -30,34 +30,34 @@ var ResourceRequirementsTable = map[lokiv1beta1.LokiStackSizeType]ComponentResou
 		Querier: ResourceRequirements{
 			PVCSize: resource.MustParse("1Gi"),
 			Requests: map[corev1.ResourceName]resource.Quantity{
-				corev1.ResourceCPU:    resource.MustParse("1"),
-				corev1.ResourceMemory: resource.MustParse("3Gi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceMemory: resource.MustParse("100Mi"),
 			},
 		},
 		Ingester: ResourceRequirements{
 			PVCSize: resource.MustParse("1Gi"),
 			Requests: map[corev1.ResourceName]resource.Quantity{
-				corev1.ResourceCPU:    resource.MustParse("1"),
-				corev1.ResourceMemory: resource.MustParse("1Gi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceMemory: resource.MustParse("100Mi"),
 			},
 		},
 		Distributor: corev1.ResourceRequirements{
 			Requests: map[corev1.ResourceName]resource.Quantity{
-				corev1.ResourceCPU:    resource.MustParse("1"),
-				corev1.ResourceMemory: resource.MustParse("500Mi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceMemory: resource.MustParse("100Mi"),
 			},
 		},
 		QueryFrontend: corev1.ResourceRequirements{
 			Requests: map[corev1.ResourceName]resource.Quantity{
-				corev1.ResourceCPU:    resource.MustParse("200m"),
-				corev1.ResourceMemory: resource.MustParse("500Mi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceMemory: resource.MustParse("100Mi"),
 			},
 		},
 		Compactor: ResourceRequirements{
 			PVCSize: resource.MustParse("1Gi"),
 			Requests: map[corev1.ResourceName]resource.Quantity{
-				corev1.ResourceCPU:    resource.MustParse("1"),
-				corev1.ResourceMemory: resource.MustParse("1Gi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceMemory: resource.MustParse("100Mi"),
 			},
 		},
 		Gateway: corev1.ResourceRequirements{
