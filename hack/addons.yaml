@@ -10,13 +10,13 @@ metadata:
     app.kubernetes.io/name: logcli
 spec:
   containers:
-  - name: logcli
-    image: docker.io/grafana/logcli:2.2.0-amd64
-    env:
-      - name: LOKI_ADDR
-        value: http://loki-querier-http-lokistack-sample.loki.svc.cluster.local:3100
-    command: [ "/bin/sh", "-c", "--" ]
-    args: [ "while true; do sleep 30; done;" ]
+    - name: logcli
+      image: docker.io/grafana/logcli:2.2.0-amd64
+      env:
+        - name: LOKI_ADDR
+          value: http://loki-querier-http-lokistack-dev.loki.svc.cluster.local:3100
+      command: ["/bin/sh", "-c", "--"]
+      args: ["while true; do sleep 30; done;"]
 
 ---
 apiVersion: apps/v1
@@ -41,7 +41,7 @@ spec:
       containers:
         - args:
             - -config.file=/etc/promtail/promtail.yaml
-            - -client.url=http://loki-distributor-http-lokistack-sample.loki.svc.cluster.local:3100/api/prom/push
+            - -client.url=http://loki-distributor-http-lokistack-dev.loki.svc.cluster.local:3100/api/prom/push
             - -log.level=info
           env:
             - name: HOSTNAME
@@ -418,18 +418,18 @@ metadata:
   labels:
     app.kubernetes.io/name: promtail
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  - nodes/proxy
-  - services
-  - endpoints
-  - pods
-  verbs:
-  - get
-  - watch
-  - list
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+      - nodes/proxy
+      - services
+      - endpoints
+      - pods
+    verbs:
+      - get
+      - watch
+      - list
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -443,6 +443,6 @@ roleRef:
   kind: ClusterRole
   name: loki-promtail-clusterrole
 subjects:
-- kind: ServiceAccount
-  name: loki-promtail
-  namespace: loki
+  - kind: ServiceAccount
+    name: loki-promtail
+    namespace: loki
