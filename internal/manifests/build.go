@@ -44,12 +44,18 @@ func BuildAll(opts Options) ([]client.Object, error) {
 		return nil, err
 	}
 
+	rulerObjs, err := BuildRuler(opts)
+	if err != nil {
+		return nil, err
+	}
+
 	res = append(res, cm)
 	res = append(res, distributorObjs...)
 	res = append(res, ingesterObjs...)
 	res = append(res, querierObjs...)
 	res = append(res, compactorObjs...)
 	res = append(res, queryFrontendObjs...)
+	res = append(res, rulerObjs...)
 	res = append(res, BuildLokiGossipRingService(opts.Name))
 
 	if opts.Flags.EnableServiceMonitors {

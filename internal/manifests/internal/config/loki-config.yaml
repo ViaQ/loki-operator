@@ -3,6 +3,19 @@ auth_enabled: false
 chunk_store_config:
   chunk_cache_config:
     enable_fifocache: yes
+ruler:
+  storage:
+    type: local
+    local:
+      directory: /etc/loki/rules
+  ring:
+    kvstore:
+      store: memberlist
+  rule_path: /tmp/loki/scratch
+  remote_write:
+    enabled: true
+    client:
+      url: {{ .Stack.Template.Ruler.PrometheusEndpoint }}
 compactor:
   compaction_interval: 2h
   shared_store: s3
