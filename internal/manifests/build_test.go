@@ -220,8 +220,9 @@ func TestBuildAll_WithFeatureFlags_EnableGateway(t *testing.T) {
 					Size: lokiv1beta1.SizeOneXSmall,
 				},
 				Flags: FeatureFlags{
-					EnableGateway:            false,
-					EnableGatewayTLSListener: false,
+					EnableGateway:                 false,
+					EnableGatewayTLSListener:      false,
+					EnableTLSServiceMonitorConfig: false,
 				},
 			},
 		},
@@ -234,8 +235,9 @@ func TestBuildAll_WithFeatureFlags_EnableGateway(t *testing.T) {
 					Size: lokiv1beta1.SizeOneXSmall,
 				},
 				Flags: FeatureFlags{
-					EnableGateway:            true,
-					EnableGatewayTLSListener: true,
+					EnableGateway:                 true,
+					EnableGatewayTLSListener:      true,
+					EnableTLSServiceMonitorConfig: true,
 				},
 			},
 		},

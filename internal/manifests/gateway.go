@@ -33,6 +33,12 @@ func BuildGateway(opts Options) ([]client.Object, error) {
 		}
 	}
 
+	if opts.Flags.EnableGatewayTLSListener && opts.Flags.EnableTLSServiceMonitorConfig {
+		if err := configureGatewayMetricsPKI(&deployment.Spec.Template.Spec); err != nil {
+			return nil, err
+		}
+	}
+
 	if opts.Flags.EnableTLSServiceMonitorConfig {
 		if err := configureGatewayServiceMonitorPKI(deployment, opts.Name); err != nil {
 			return nil, err
@@ -311,4 +317,19 @@ func configureGatewayPKI(podSpec *corev1.PodSpec) error {
 func configureGatewayServiceMonitorPKI(deployment *appsv1.Deployment, stackName string) error {
 	serviceName := serviceNameGatewayHTTP(stackName)
 	return configureServiceMonitorPKI(&deployment.Spec.Template.Spec, serviceName)
+}
+
+func configureGatewayMetricsPKI(podSpec *corev1.PodSpec) error {
+	secretContainerSpec := corev1.Container{
+		Args: []string{
+			fmt.Sprintf("--tls.internal.server.cert-file=%s", path.Join(gateway.LokiGatewayTLSDir, "cert")),
+			fmt.Sprintf("--tls.internal.server.key-file=%s", path.Join(gateway.LokiGatewayTLSDir, "key")),
+		},
+	}
+
+	if err := mergo.Merge(&podSpec.Containers[0], secretContainerSpec, mergo.WithAppendSlice); err != nil {
+		return kverrors.Wrap(err, "failed to merge container")
+	}
+
+	return nil
 }
