@@ -36,5 +36,4 @@ type FeatureFlags struct {
 	EnableServiceMonitors           bool
 	EnableTLSServiceMonitorConfig   bool
 	EnableGateway                   bool
-	EnableGatewayTLSListener        bool
 }

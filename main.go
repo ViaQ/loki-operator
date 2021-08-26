@@ -56,7 +56,6 @@ func main() {
 		enableServiceMonitors    bool
 		enableTLSServiceMonitors bool
 		enableGateway            bool
-		enableGatewayTLSListener bool
 	)
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -71,8 +70,6 @@ func main() {
 		"Enables loading of a prometheus service monitor.")
 	flag.BoolVar(&enableGateway, "with-lokistack-gateway", false,
 		"Enables the manifest creation for the entire lokistack-gateway.")
-	flag.BoolVar(&enableGatewayTLSListener, "with-lokistack-gateway-tls-listener", false,
-		"Configure the lokistack-gateway TLS listener.")
 	flag.Parse()
 
 	log.Init("loki-operator")
@@ -100,7 +97,6 @@ func main() {
 		EnableServiceMonitors:           enableServiceMonitors,
 		EnableTLSServiceMonitorConfig:   enableTLSServiceMonitors,
 		EnableGateway:                   enableGateway,
-		EnableGatewayTLSListener:        enableGatewayTLSListener,
 	}
 
 	if err = (&controllers.LokiStackReconciler{

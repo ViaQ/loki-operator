@@ -27,20 +27,11 @@ func BuildGateway(opts Options) ([]client.Object, error) {
 	}
 
 	deployment := NewGatewayDeployment(opts, sha1C)
-	if opts.Flags.EnableGatewayTLSListener {
-		if err := configureGatewayPKI(&deployment.Spec.Template.Spec); err != nil {
-			return nil, err
-		}
-	}
-
-	if opts.Flags.EnableGatewayTLSListener && opts.Flags.EnableTLSServiceMonitorConfig {
-		if err := configureGatewayMetricsPKI(&deployment.Spec.Template.Spec); err != nil {
-			return nil, err
-		}
-	}
-
 	if opts.Flags.EnableTLSServiceMonitorConfig {
 		if err := configureGatewayServiceMonitorPKI(deployment, opts.Name); err != nil {
+			return nil, err
+		}
+		if err := configureGatewayMetricsPKI(&deployment.Spec.Template.Spec); err != nil {
 			return nil, err
 		}
 	}
@@ -252,7 +243,12 @@ func gatewayConfigOptions(opt Options) gateway.Options {
 	}
 }
 
-func configureGatewayPKI(podSpec *corev1.PodSpec) error {
+func configureGatewayServiceMonitorPKI(deployment *appsv1.Deployment, stackName string) error {
+	serviceName := serviceNameGatewayHTTP(stackName)
+	return configureServiceMonitorPKI(&deployment.Spec.Template.Spec, serviceName)
+}
+
+func configureGatewayMetricsPKI(podSpec *corev1.PodSpec) error {
 	secretVolumeSpec := corev1.PodSpec{
 		Volumes: []corev1.Volume{
 			{
@@ -297,34 +293,14 @@ func configureGatewayPKI(podSpec *corev1.PodSpec) error {
 			},
 		},
 		Args: []string{
-			fmt.Sprintf("--tls.server.cert-file=%s", path.Join(gateway.LokiGatewayTLSDir, "cert")),
-			fmt.Sprintf("--tls.server.key-file=%s", path.Join(gateway.LokiGatewayTLSDir, "key")),
+			fmt.Sprintf("--tls.internal.server.cert-file=%s", path.Join(gateway.LokiGatewayTLSDir, "cert")),
+			fmt.Sprintf("--tls.internal.server.key-file=%s", path.Join(gateway.LokiGatewayTLSDir, "key")),
 			fmt.Sprintf("--tls.healthchecks.server-ca-file=%s", path.Join(gateway.LokiGatewayTLSDir, "ca")),
 		},
 	}
 
 	if err := mergo.Merge(podSpec, secretVolumeSpec, mergo.WithAppendSlice); err != nil {
 		return kverrors.Wrap(err, "failed to merge volumes")
-	}
-
-	if err := mergo.Merge(&podSpec.Containers[0], secretContainerSpec, mergo.WithAppendSlice); err != nil {
-		return kverrors.Wrap(err, "failed to merge container")
-	}
-
-	return nil
-}
-
-func configureGatewayServiceMonitorPKI(deployment *appsv1.Deployment, stackName string) error {
-	serviceName := serviceNameGatewayHTTP(stackName)
-	return configureServiceMonitorPKI(&deployment.Spec.Template.Spec, serviceName)
-}
-
-func configureGatewayMetricsPKI(podSpec *corev1.PodSpec) error {
-	secretContainerSpec := corev1.Container{
-		Args: []string{
-			fmt.Sprintf("--tls.internal.server.cert-file=%s", path.Join(gateway.LokiGatewayTLSDir, "cert")),
-			fmt.Sprintf("--tls.internal.server.key-file=%s", path.Join(gateway.LokiGatewayTLSDir, "key")),
-		},
 	}
 
 	if err := mergo.Merge(&podSpec.Containers[0], secretContainerSpec, mergo.WithAppendSlice); err != nil {

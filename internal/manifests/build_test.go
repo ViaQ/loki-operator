@@ -221,7 +221,6 @@ func TestBuildAll_WithFeatureFlags_EnableGateway(t *testing.T) {
 				},
 				Flags: FeatureFlags{
 					EnableGateway:                 false,
-					EnableGatewayTLSListener:      false,
 					EnableTLSServiceMonitorConfig: false,
 				},
 			},
@@ -236,7 +235,6 @@ func TestBuildAll_WithFeatureFlags_EnableGateway(t *testing.T) {
 				},
 				Flags: FeatureFlags{
 					EnableGateway:                 true,
-					EnableGatewayTLSListener:      true,
 					EnableTLSServiceMonitorConfig: true,
 				},
 			},
