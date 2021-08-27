@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/ViaQ/logerr/log"
+	"github.com/imdario/mergo"
+
 	"github.com/ViaQ/loki-operator/internal/manifests/internal/config"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -126,6 +129,9 @@ func NewCompactorStatefulSet(opts Options) *appsv1.StatefulSet {
 
 	l := ComponentLabels(LabelCompactorComponent, opts.Name)
 	a := commonAnnotations(opts.ConfigSHA1)
+	if err := mergo.Merge(a, storageAnnotations(opts.StorageSHA1)); err != nil {
+		log.Error(err, "Failed merging annotations")
+	}
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",

@@ -1,17 +1,20 @@
 package controllers
 
 import (
+	"context"
 	"flag"
-	"io/ioutil"
-	"os"
-	"testing"
-
 	"github.com/ViaQ/logerr/log"
 	lokiv1beta1 "github.com/ViaQ/loki-operator/api/v1beta1"
 	"github.com/ViaQ/loki-operator/internal/external/k8s/k8sfakes"
 	"github.com/stretchr/testify/require"
+	"io/ioutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"os"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -108,4 +111,33 @@ func TestLokiStackController_RegisterOwnedResourcesForUpdateOrDeleteOnly(t *test
 		require.Equal(t, tst.obj, obj)
 		require.Equal(t, tst.pred, opts[0])
 	}
+}
+
+func TestLokiStackController_ReconcileWithDependentObjectsMap(t *testing.T) {
+	ctx := context.TODO()
+	dependentObject := types.NamespacedName{Namespace: "test", Name: "dependent"}
+	lokiStackObject := types.NamespacedName{Namespace: "test", Name: "lokiStack"}
+	r := &LokiStackReconciler{
+		DependentObjectsMap: map[types.NamespacedName]types.NamespacedName{dependentObject: lokiStackObject},
+		Log:                 log.WithName("test").WithName("LokiStack"),
+	}
+	req := ctrl.Request{NamespacedName: dependentObject}
+	k := &k8sfakes.FakeClient{}
+	stack := lokiv1beta1.LokiStack{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "LokiStack",
+		},
+		Spec: lokiv1beta1.LokiStackSpec{
+			ManagementState: lokiv1beta1.ManagementStateUnmanaged,
+		},
+	}
+	k.GetStub = func(_ context.Context, _ types.NamespacedName, object client.Object) error {
+		k.SetClientObject(object, &stack)
+		return nil
+	}
+	r.Client = k
+
+	res, err := r.Reconcile(ctx, req)
+	require.NoError(t, err)
+	require.Equal(t, ctrl.Result{}, res)
 }
