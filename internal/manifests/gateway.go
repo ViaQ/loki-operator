@@ -28,9 +28,6 @@ func BuildGateway(opts Options) ([]client.Object, error) {
 
 	deployment := NewGatewayDeployment(opts, sha1C)
 	if opts.Flags.EnableTLSServiceMonitorConfig {
-		if err := configureGatewayServiceMonitorPKI(deployment, opts.Name); err != nil {
-			return nil, err
-		}
 		if err := configureGatewayMetricsPKI(&deployment.Spec.Template.Spec); err != nil {
 			return nil, err
 		}
@@ -241,11 +238,6 @@ func gatewayConfigOptions(opt Options) gateway.Options {
 		Namespace: opt.Namespace,
 		Name:      opt.Name,
 	}
-}
-
-func configureGatewayServiceMonitorPKI(deployment *appsv1.Deployment, stackName string) error {
-	serviceName := serviceNameGatewayHTTP(stackName)
-	return configureServiceMonitorPKI(&deployment.Spec.Template.Spec, serviceName)
 }
 
 func configureGatewayMetricsPKI(podSpec *corev1.PodSpec) error {
