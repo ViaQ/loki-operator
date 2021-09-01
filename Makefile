@@ -134,6 +134,9 @@ bundle: manifests $(KUSTOMIZE) $(OPERATOR_SDK)
 bundle-build: ## Build the bundle image.
 	$(OCI_RUNTIME) build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
+sanity: generate go-generate install ## Runs sanity test
+	test/sanity/sanity-test.sh $(CLUSTER_LOGGING_NS)
+
 ##@ Deployment
 
 run: generate manifests ## Run against the configured Kubernetes cluster in ~/.kube/config
@@ -167,7 +170,7 @@ olm-deploy:  ## Deploy the operator bundle and the operator via OLM into an Kube
 	$(error Set variable REGISTRY_ORG to use a custom container registry org account for local development)
 else
 olm-deploy: olm-deploy-bundle olm-deploy-operator $(OPERATOR_SDK)
-	kubectl create ns $(CLUSTER_LOGGING_NS)
+	kubectl create ns $(CLUSTER_LOGGING_NS) --dry-run=client -o yaml | kubectl apply -f -
 	kubectl label ns/$(CLUSTER_LOGGING_NS) openshift.io/cluster-monitoring=true --overwrite
 	$(OPERATOR_SDK) run bundle -n $(CLUSTER_LOGGING_NS) --install-mode OwnNamespace $(BUNDLE_IMG)
 endif
@@ -175,12 +178,21 @@ endif
 # Build and push the secret for the S3 storage
 .PHONY: olm-deploy-example-storage-secret
 olm-deploy-example-storage-secret:
+	kubectl create ns $(CLUSTER_LOGGING_NS) --dry-run=client -o yaml | kubectl apply -f -
 	hack/deploy-example-secret.sh $(CLUSTER_LOGGING_NS)
 
-.PHONY: olm-deploy-example
-olm-deploy-example: olm-deploy olm-deploy-example-storage-secret ## Deploy example LokiStack custom resource
+# Build and push example lokistack CRD
+.PHONY: olm-deploy-example-lokistack-crd
+olm-deploy-example-lokistack-crd:
+	kubectl create ns $(CLUSTER_LOGGING_NS) --dry-run=client -o yaml | kubectl apply -f -
+	kubectl -n $(CLUSTER_LOGGING_NS) delete -f hack/lokistack_dev.yaml  ||:
 	kubectl -n $(CLUSTER_LOGGING_NS) create -f hack/lokistack_dev.yaml
 
+.PHONY: olm-deploy-example
+olm-deploy-example: olm-deploy olm-deploy-example-storage-secret olm-deploy-example-lokistack-crd  ## Deploy loki with example resources
+
+# Cleanup deployments of the operator bundle and the operator via OLM
+# on an OpenShift cluster selected via KUBECONFIG.
 .PHONY: olm-undeploy
 olm-undeploy: $(OPERATOR_SDK) ## Cleanup deployments of the operator bundle and the operator via OLM on an OpenShift cluster selected via KUBECONFIG.
 	$(OPERATOR_SDK) cleanup loki-operator
