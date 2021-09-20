@@ -19,6 +19,8 @@ type Options struct {
 	ResourceRequirements internal.ComponentResources
 
 	ObjectStorage ObjectStorage
+
+	GatewaySecret []GatewaySecret
 }
 
 // ObjectStorage for storage config.
@@ -36,4 +38,12 @@ type FeatureFlags struct {
 	EnableServiceMonitors           bool
 	EnableTLSServiceMonitorConfig   bool
 	EnableGateway                   bool
+}
+
+// GatewaySecret for clientID, clientSecret and issuerCAPath for tenant's authentication.
+type GatewaySecret struct {
+	TenantName   string
+	ClientID     string
+	ClientSecret string
+	IssuerCAPath string
 }

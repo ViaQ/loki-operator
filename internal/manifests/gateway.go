@@ -64,6 +64,16 @@ func NewGatewayDeployment(opts Options, sha1C string) *appsv1.Deployment {
 					},
 				},
 			},
+			{
+				Name: "observatorium",
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: LabelGatewayComponent,
+						},
+					},
+				},
+			},
 		},
 		Containers: []corev1.Container{
 			{
@@ -110,6 +120,12 @@ func NewGatewayDeployment(opts Options, sha1C string) *appsv1.Deployment {
 						ReadOnly:  true,
 						MountPath: path.Join(gateway.LokiGatewayMountDir, gateway.LokiGatewayTenantFileName),
 						SubPath:   "tenants.yaml",
+					},
+					{
+						Name:      "observatorium",
+						ReadOnly:  true,
+						MountPath: path.Join(gateway.LokiGatewayMountDir, gateway.LokiGatewayRegoFileName),
+						SubPath:   "observatorium.rego",
 					},
 				},
 				LivenessProbe: &corev1.Probe{
@@ -203,13 +219,13 @@ func NewGatewayHTTPService(opts Options) *corev1.Service {
 // gatewayConfigMap creates a configMap for rbac.yaml and tenants.yaml
 func gatewayConfigMap(opt Options) (*corev1.ConfigMap, string, error) {
 	cfg := gatewayConfigOptions(opt)
-	rbacConfig, tenantsConfig, err := gateway.Build(cfg)
+	rbacConfig, tenantsConfig, regoConfig, err := gateway.Build(cfg)
 	if err != nil {
 		return nil, "", err
 	}
 
 	s := sha1.New()
-	_, err = s.Write(rbacConfig)
+	_, err = s.Write(tenantsConfig)
 	if err != nil {
 		return nil, "", err
 	}
@@ -227,6 +243,7 @@ func gatewayConfigMap(opt Options) (*corev1.ConfigMap, string, error) {
 		BinaryData: map[string][]byte{
 			gateway.LokiGatewayRbacFileName:   rbacConfig,
 			gateway.LokiGatewayTenantFileName: tenantsConfig,
+			gateway.LokiGatewayRegoFileName:   regoConfig,
 		},
 	}, sha1C, nil
 }
