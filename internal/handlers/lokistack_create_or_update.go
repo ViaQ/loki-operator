@@ -65,7 +65,7 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 
 	var gatewayTenants []manifests.GatewaySecret
 	if stack.Spec.Tenants != nil {
-		if err := gateway.ValidateModes(stack); err != nil {
+		if err = gateway.ValidateModes(stack); err != nil {
 			return kverrors.Wrap(err, "invalid configuration provided for given mode")
 		}
 
@@ -73,7 +73,7 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 			var gatewaySecret corev1.Secret
 			for _, tenant := range stack.Spec.Tenants.Authentication {
 				key := client.ObjectKey{Name: tenant.OIDC.Secret.Name, Namespace: stack.Namespace}
-				if err := k.Get(ctx, key, &gatewaySecret); err != nil {
+				if err = k.Get(ctx, key, &gatewaySecret); err != nil {
 					if apierrors.IsNotFound(err) {
 						return status.SetDegradedCondition(ctx, k, req,
 							fmt.Sprintf("Missing secrets for tenant %s", tenant.Name),
@@ -84,6 +84,7 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 						"name", key)
 				}
 
+				//nolint
 				gs, err := secrets.ExtractGatewaySecret(&gatewaySecret, tenant.Name)
 				if err != nil {
 					return status.SetDegradedCondition(ctx, k, req,
