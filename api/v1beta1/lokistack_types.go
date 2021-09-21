@@ -284,6 +284,164 @@ type LimitsSpec struct {
 	Tenants map[string]LimitsTemplateSpec `json:"tenants,omitempty"`
 }
 
+// ModeType is the mode in which LokiStack Gateway will be configured.
+//
+// +kubebuilder:validation:Enum=static;dynamic;openshift-logging
+type ModeType string
+
+// PermissionType is a LokiStack Gateway RBAC permission.
+//
+// +kubebuilder:validation:Enum=read;write
+type PermissionType string
+
+// SubjectKind is a kind of LokiStack Gateway RBAC subject.
+//
+// +kubebuilder:validation:Enum=user;group
+type SubjectKind string
+
+const (
+	// Static mode needs a static rego file which assert the rbac file contents.
+	Static ModeType = "static"
+	// Dynamic mode delegates the authorization to a third-party OPA-compatible endpoint.
+	Dynamic ModeType = "dynamic"
+	// OpenshiftLogging mode is the full OpenShift in-cluster support.
+	OpenshiftLogging ModeType = "openshift-logging"
+
+	// Write gives access to write data to a tenant.
+	Write PermissionType = "write"
+	// Read gives access to read data from a tenant.
+	Read PermissionType = "read"
+
+	// User represents a subject that is a user.
+	User SubjectKind = "user"
+	// Group represents a subject that is a group.
+	Group SubjectKind = "group"
+)
+
+// TenantsSpec defines the mode, authentication and authorization
+// configuration of the lokiStack gateway component.
+type TenantsSpec struct {
+	// Mode defines the mode in which lokistack-gateway component will be configured.
+	//
+	// +required
+	// +kubebuilder:validation:Required
+	// +kubebuilder:default:=static
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:static","urn:alm:descriptor:com.tectonic.ui:select:dynamic","urn:alm:descriptor:com.tectonic.ui:select:openshift-logging"},displayName="Mode"
+	Mode ModeType `json:"mode,omitempty"`
+	// Authentication defines the lokistack-gateway component authentication configuration spec.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Authentication"
+	Authentication []*AuthenticationSpec `json:"authentication,omitempty"`
+	// Authorization defines the lokistack-gateway component authorization configuration spec.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Authorization"
+	Authorization *AuthorizationSpec `json:"authorization,omitempty"`
+}
+
+// AuthenticationSpec defines the oidc configuration for lokiStack Gateway component.
+type AuthenticationSpec struct {
+	// Name defines the name of the tenant.
+	//
+	// +required
+	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tenant Name"
+	Name string `json:"name"`
+	// ID defines the id of the tenant.
+	//
+	// +required
+	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tenant ID"
+	ID string `json:"id"`
+	// OIDC defines the spec for the OIDC tenant's authentication.
+	//
+	// +required
+	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OIDC Config"
+	OIDC *OIDCSpec `json:"oidc"`
+}
+
+// OIDCSpec defines the oidc configuration spec for lokiStack Gateway component.
+type OIDCSpec struct {
+	// Secret defines the spec for the clientID, clientSecret and issuerCAPath for tenant's authentication.
+	//
+	// +required
+	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tenant Secret"
+	Secret        *TenantSecretSpec `json:"secret"`
+	GroupClaim    string            `json:"groupClaim"`
+	IssuerURL     string            `json:"issuerURL"`
+	RedirectURL   string            `json:"redirectURL"`
+	UsernameClaim string            `json:"usernameClaim"`
+}
+
+// TenantSecretSpec is a secret reference containing name only, no namespace.
+type TenantSecretSpec struct {
+	// Name of a secret in the namespace configured for tenant secrets.
+	//
+	// +required
+	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret",displayName="Tenant Secret Name"
+	Name string `json:"name"`
+}
+
+// AuthorizationSpec defines the opa, role bindings and roles
+// configuration for lokiStack Gateway component.
+type AuthorizationSpec struct {
+	// OPA defines the spec for the third-party endpoint for tenant's authorization.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OPA Config"
+	OPA *OPASpec `json:"opa"`
+	// Roles defines a set of permissions to interact with a tenant.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Rbac Roles"
+	Roles []*RoleSpec `json:"roles"`
+	// RoleBindings defines configuration to bind a set of roles to a set of subjects.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Rbac RoleBindings"
+	RoleBindings []*RoleBindingsSpec `json:"roleBindings"`
+}
+
+// OPASpec defines the opa configuration spec for lokiStack Gateway component.
+type OPASpec struct {
+	// URL defines the third-party endpoint for authorization.
+	//
+	// +required
+	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OPA URL"
+	URL string `json:"url"`
+}
+
+// RoleSpec describes a set of permissions to interact with a tenant.
+type RoleSpec struct {
+	Name        string           `json:"name"`
+	Resources   []string         `json:"resources"`
+	Tenants     []string         `json:"tenants"`
+	Permissions []PermissionType `json:"permissions"`
+}
+
+// RoleBindingsSpec binds a set of roles to a set of subjects.
+type RoleBindingsSpec struct {
+	Name     string     `json:"name"`
+	Subjects []*Subject `json:"subjects"`
+	Roles    []string   `json:"roles"`
+}
+
+// Subject represents a subject that has been bound to a role.
+type Subject struct {
+	Name string      `json:"name"`
+	Kind SubjectKind `json:"kind"`
+}
+
 // LokiStackSpec defines the desired state of LokiStack
 type LokiStackSpec struct {
 
@@ -338,6 +496,13 @@ type LokiStackSpec struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:com.tectonic.ui:advanced",displayName="Node Placement"
 	Template *LokiTemplateSpec `json:"template,omitempty"`
+
+	// Tenants defines the lokistack-gateway component tenants configuration spec.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tenants Configuration"
+	Tenants *TenantsSpec `json:"tenants,omitempty"`
 }
 
 // LokiStackConditionType deifnes the type of condition types of a Loki deployment.

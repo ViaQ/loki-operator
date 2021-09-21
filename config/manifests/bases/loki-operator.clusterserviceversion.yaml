@@ -274,6 +274,58 @@ spec:
         path: template.queryFrontend.replicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Tenants defines the lokistack-gateway component tenants configuration
+          spec.
+        displayName: Tenants Configuration
+        path: tenants
+      - description: Authentication defines the lokistack-gateway component authentication
+          configuration spec.
+        displayName: Authentication
+        path: tenants.authentication
+      - description: ID defines the id of the tenant.
+        displayName: Tenant ID
+        path: tenants.authentication[0].id
+      - description: Name defines the name of the tenant.
+        displayName: Tenant Name
+        path: tenants.authentication[0].name
+      - description: OIDC defines the spec for the OIDC tenant's authentication.
+        displayName: OIDC Config
+        path: tenants.authentication[0].oidc
+      - description: Secret defines the spec for the clientID, clientSecret and issuerCAPath
+          for tenant's authentication.
+        displayName: Tenant Secret
+        path: tenants.authentication[0].oidc.secret
+      - description: Name of a secret in the namespace configured for tenant secrets.
+        displayName: Tenant Secret Name
+        path: tenants.authentication[0].oidc.secret.name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Authorization defines the lokistack-gateway component authorization
+          configuration spec.
+        displayName: Authorization
+        path: tenants.authorization
+      - description: OPA defines the spec for the third-party endpoint for tenant's
+          authorization.
+        displayName: OPA Config
+        path: tenants.authorization.opa
+      - description: URL defines the third-party endpoint for authorization.
+        displayName: OPA URL
+        path: tenants.authorization.opa.url
+      - description: RoleBindings defines configuration to bind a set of roles to
+          a set of subjects.
+        displayName: Rbac RoleBindings
+        path: tenants.authorization.roleBindings
+      - description: Roles defines a set of permissions to interact with a tenant.
+        displayName: Rbac Roles
+        path: tenants.authorization.roles
+      - description: Mode defines the mode in which lokistack-gateway component will
+          be configured.
+        displayName: Mode
+        path: tenants.mode
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:static
+        - urn:alm:descriptor:com.tectonic.ui:select:dynamic
+        - urn:alm:descriptor:com.tectonic.ui:select:openshift-logging
       statusDescriptors:
       - description: Distributor is a map to the per pod status of the distributor
           deployment

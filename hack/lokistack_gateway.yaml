@@ -1,0 +1,26 @@
+apiVersion: loki.openshift.io/v1beta1
+kind: LokiStack
+metadata:
+  name: lokistack-dev
+spec:
+  size: 1x.extra-small
+  replicationFactor: 1
+  storage:
+    secret:
+      name: test
+  storageClassName: standard
+  tenants:
+    mode: dynamic
+    authentication:
+    - name: tenant-a
+      id: test
+      oidc:
+        secret:
+          name: test
+        issuerURL: https://127.0.0.1:5556/dex
+        redirectURL: https://localhost:8443/oidc/tenant-a/callback
+        usernameClaim: test
+        groupClaim: test
+    authorization:
+      opa:
+        url: http://127.0.0.1:8080/v1/data/observatorium/allow
