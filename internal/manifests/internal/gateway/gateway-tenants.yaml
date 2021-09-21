@@ -1,9 +1,24 @@
 tenants:
-{{- if eq .Stack.Tenants.Mode "static" -}}
-{{- range $spec := .Stack.Tenants.Authentication }}
+{{- if $l := . -}}
+{{- if eq $l.Stack.Tenants.Mode "static" -}}
+{{- range $spec := $l.Stack.Tenants.Authentication }}
 - name: {{ $spec.Name }}
   id: {{ $spec.ID }}
   oidc:
+    {{- range $secret := $l.GatewaySecret }}
+    {{- if eq $secret.TenantName $spec.Name -}}
+    {{ if $secret.ClientID }}
+    clientID: {{ $secret.ClientID }}
+    {{- end -}}
+    {{ if $secret.ClientSecret }}
+    clientSecret: {{ $secret.ClientSecret }}
+    {{- end -}}
+    {{ if $secret.IssuerCAPath }}
+    issuerCAPath: {{ $secret.IssuerCAPath }}
+    {{- end -}}
+    {{- end -}}
+    {{- end -}}
+    {{ print "\n" }}
     issuerURL: {{ $spec.OIDC.IssuerURL }}
     redirectURL: {{ $spec.OIDC.RedirectURL }}
     {{ if $spec.OIDC.UsernameClaim }}
@@ -13,12 +28,26 @@ tenants:
     groupClaim: {{ $spec.OIDC.GroupClaim }}
     {{- end -}}
 {{- end -}}
-{{- else if eq .Stack.Tenants.Mode "dynamic" -}}
-{{- if $tenant := .Stack.Tenants -}}
+{{- else if eq $l.Stack.Tenants.Mode "dynamic" -}}
+{{- if $tenant := $l.Stack.Tenants -}}
 {{- range $spec := $tenant.Authentication }}
 - name: {{ $spec.Name }}
   id: {{ $spec.ID }}
   oidc:
+    {{- range $secret := $l.GatewaySecret }}
+    {{- if eq $secret.TenantName $spec.Name -}}
+    {{ if $secret.ClientID }}
+    clientID: {{ $secret.ClientID }}
+    {{- end -}}
+    {{ if $secret.ClientID }}
+    clientSecret: {{ $secret.ClientSecret }}
+    {{- end -}}
+    {{ if $secret.ClientID }}
+    issuerCAPath: {{ $secret.IssuerCAPath }}
+    {{- end -}}
+    {{- end -}}
+    {{- end -}}
+    {{ print "\n" }}
     issuerURL: {{ $spec.OIDC.IssuerURL }}
     redirectURL: {{ $spec.OIDC.RedirectURL }}
     {{ if $spec.OIDC.UsernameClaim }}
@@ -67,4 +96,5 @@ tenants:
     usernameClaim: name
   opa:
     url: http://127.0.0.1:8080/v1/data/observatorium/allow
+{{- end -}}
 {{- end -}}

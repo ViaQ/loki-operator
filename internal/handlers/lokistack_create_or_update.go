@@ -63,7 +63,7 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 		)
 	}
 
-	var gatewayTenants []manifests.GatewaySecret
+	var gatewayTenants []*manifests.GatewaySecret
 	if stack.Spec.Tenants != nil {
 		if err = gateway.ValidateModes(stack); err != nil {
 			return kverrors.Wrap(err, "invalid configuration provided for given mode")
@@ -92,7 +92,7 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 						lokiv1beta1.ReasonInvalidGatewayTenantSecret,
 					)
 				}
-				gatewayTenants = append(gatewayTenants, *gs)
+				gatewayTenants = append(gatewayTenants, gs)
 			}
 		}
 	}

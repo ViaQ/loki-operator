@@ -20,7 +20,7 @@ type Options struct {
 
 	ObjectStorage ObjectStorage
 
-	GatewaySecret []GatewaySecret
+	GatewaySecret []*GatewaySecret
 }
 
 // ObjectStorage for storage config.

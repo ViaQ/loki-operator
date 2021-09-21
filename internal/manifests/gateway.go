@@ -250,10 +250,22 @@ func gatewayConfigMap(opt Options) (*corev1.ConfigMap, string, error) {
 
 // gatewayConfigOptions converts Options to gateway.Options
 func gatewayConfigOptions(opt Options) gateway.Options {
+	var gatewaySecrets []*gateway.Secret
+	for _, secret := range opt.GatewaySecret {
+		gatewaySecret := &gateway.Secret{
+			TenantName:   secret.TenantName,
+			ClientID:     secret.ClientID,
+			ClientSecret: secret.ClientSecret,
+			IssuerCAPath: secret.IssuerCAPath,
+		}
+		gatewaySecrets = append(gatewaySecrets, gatewaySecret)
+	}
+
 	return gateway.Options{
-		Stack:     opt.Stack,
-		Namespace: opt.Namespace,
-		Name:      opt.Name,
+		Stack:         opt.Stack,
+		Namespace:     opt.Namespace,
+		Name:          opt.Name,
+		GatewaySecret: gatewaySecrets,
 	}
 }
 
