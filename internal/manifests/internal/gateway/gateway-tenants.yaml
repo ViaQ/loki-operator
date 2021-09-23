@@ -27,6 +27,12 @@ tenants:
     {{ if $spec.OIDC.GroupClaim }}
     groupClaim: {{ $spec.OIDC.GroupClaim }}
     {{- end -}}
+  {{ print "\n" }}
+  opa:
+    query: data.lokistack.allow
+    paths:
+    - /etc/lokistack-gateway/rbac.yaml
+    - /etc/lokistack-gateway/lokistack-gateway.rego
 {{- end -}}
 {{- else if eq $l.Stack.Tenants.Mode "dynamic" -}}
 {{- if $tenant := $l.Stack.Tenants -}}
