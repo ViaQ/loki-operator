@@ -688,6 +688,11 @@ func TestCreateOrUpdateLokiStack_WhenMissingGatewaySecret_SetDegraded(t *testing
 						},
 					},
 				},
+				Authorization: &lokiv1beta1.AuthorizationSpec{
+					OPA: &lokiv1beta1.OPASpec{
+						URL: "some-url",
+					},
+				},
 			},
 		},
 	}
@@ -746,6 +751,11 @@ func TestCreateOrUpdateLokiStack_WhenInvalidGatewaySecret_SetDegraded(t *testing
 								Name: invalidSecret.Name,
 							},
 						},
+					},
+				},
+				Authorization: &lokiv1beta1.AuthorizationSpec{
+					OPA: &lokiv1beta1.OPASpec{
+						URL: "some-url",
 					},
 				},
 			},

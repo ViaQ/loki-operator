@@ -88,6 +88,14 @@ func TestGatewayConfigMap_ReturnsSHA1OfBinaryContents(t *testing.T) {
 				},
 			},
 		},
+		TenantSecrets: []*TenantSecrets{
+			{
+				TenantName:   "test",
+				ClientID:     "test",
+				ClientSecret: "test",
+				IssuerCAPath: "/tmp/test",
+			},
+		},
 	}
 
 	_, sha1C, err := gatewayConfigMap(opts)
