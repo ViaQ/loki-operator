@@ -12,7 +12,7 @@ type Options struct {
 	Name             string
 	StorageDirectory string
 
-	GatewaySecret []*Secret
+	TenantSecrets []*Secret
 }
 
 // Secret for clientID, clientSecret and issuerCAPath for tenant's authentication.

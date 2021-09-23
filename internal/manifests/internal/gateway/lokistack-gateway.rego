@@ -1,4 +1,4 @@
-package observatorium
+package lokistack
 
 import input
 import data.roles

@@ -677,7 +677,7 @@ func TestCreateOrUpdateLokiStack_WhenMissingGatewaySecret_SetDegraded(t *testing
 			Size: lokiv1beta1.SizeOneXExtraSmall,
 			Tenants: &lokiv1beta1.TenantsSpec{
 				Mode: "dynamic",
-				Authentication: []*lokiv1beta1.AuthenticationSpec{
+				Authentication: []lokiv1beta1.AuthenticationSpec{
 					{
 						Name: "test",
 						ID:   "1234",
@@ -737,7 +737,7 @@ func TestCreateOrUpdateLokiStack_WhenInvalidGatewaySecret_SetDegraded(t *testing
 			Size: lokiv1beta1.SizeOneXExtraSmall,
 			Tenants: &lokiv1beta1.TenantsSpec{
 				Mode: "dynamic",
-				Authentication: []*lokiv1beta1.AuthenticationSpec{
+				Authentication: []lokiv1beta1.AuthenticationSpec{
 					{
 						Name: "test",
 						ID:   "1234",

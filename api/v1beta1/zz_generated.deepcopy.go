@@ -56,24 +56,16 @@ func (in *AuthorizationSpec) DeepCopyInto(out *AuthorizationSpec) {
 	}
 	if in.Roles != nil {
 		in, out := &in.Roles, &out.Roles
-		*out = make([]*RoleSpec, len(*in))
+		*out = make([]RoleSpec, len(*in))
 		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(RoleSpec)
-				(*in).DeepCopyInto(*out)
-			}
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.RoleBindings != nil {
 		in, out := &in.RoleBindings, &out.RoleBindings
-		*out = make([]*RoleBindingsSpec, len(*in))
+		*out = make([]RoleBindingsSpec, len(*in))
 		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(RoleBindingsSpec)
-				(*in).DeepCopyInto(*out)
-			}
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 }
@@ -547,14 +539,8 @@ func (in *RoleBindingsSpec) DeepCopyInto(out *RoleBindingsSpec) {
 	*out = *in
 	if in.Subjects != nil {
 		in, out := &in.Subjects, &out.Subjects
-		*out = make([]*Subject, len(*in))
-		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(Subject)
-				**out = **in
-			}
-		}
+		*out = make([]Subject, len(*in))
+		copy(*out, *in)
 	}
 	if in.Roles != nil {
 		in, out := &in.Roles, &out.Roles
@@ -638,13 +624,9 @@ func (in *TenantsSpec) DeepCopyInto(out *TenantsSpec) {
 	*out = *in
 	if in.Authentication != nil {
 		in, out := &in.Authentication, &out.Authentication
-		*out = make([]*AuthenticationSpec, len(*in))
+		*out = make([]AuthenticationSpec, len(*in))
 		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(AuthenticationSpec)
-				(*in).DeepCopyInto(*out)
-			}
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.Authorization != nil {

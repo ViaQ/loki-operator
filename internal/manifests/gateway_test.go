@@ -66,7 +66,7 @@ func TestGatewayConfigMap_ReturnsSHA1OfBinaryContents(t *testing.T) {
 			},
 			Tenants: &lokiv1beta1.TenantsSpec{
 				Mode: lokiv1beta1.Dynamic,
-				Authentication: []*lokiv1beta1.AuthenticationSpec{
+				Authentication: []lokiv1beta1.AuthenticationSpec{
 					{
 						Name: "test",
 						ID:   "1234",

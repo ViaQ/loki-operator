@@ -406,7 +406,7 @@ spec:
                 description: Tenants defines the lokistack-gateway component tenants configuration spec.
                 properties:
                   authentication:
-                    description: Authentication defines the lokistack-gateway component authentication configuration spec.
+                    description: Authentication defines the lokistack-gateway component authentication configuration spec per tenant.
                     items:
                       description: AuthenticationSpec defines the oidc configuration for lokiStack Gateway component.
                       properties:
@@ -452,7 +452,7 @@ spec:
                       type: object
                     type: array
                   authorization:
-                    description: Authorization defines the lokistack-gateway component authorization configuration spec.
+                    description: Authorization defines the lokistack-gateway component authorization configuration spec per tenant.
                     properties:
                       opa:
                         description: OPA defines the spec for the third-party endpoint for tenant's authorization.

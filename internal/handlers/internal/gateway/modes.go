@@ -9,7 +9,7 @@ import (
 func ValidateModes(stack lokiv1beta1.LokiStack) error {
 	if stack.Spec.Tenants.Mode == lokiv1beta1.Static {
 		if stack.Spec.Tenants.Authentication == nil {
-			return kverrors.New("mandatory configuration - missing tenants configuration")
+			return kverrors.New("mandatory configuration - missing tenants' authentication configuration")
 		}
 
 		if stack.Spec.Tenants.Authorization == nil || stack.Spec.Tenants.Authorization.Roles == nil {
@@ -18,6 +18,10 @@ func ValidateModes(stack lokiv1beta1.LokiStack) error {
 
 		if stack.Spec.Tenants.Authorization == nil || stack.Spec.Tenants.Authorization.RoleBindings == nil {
 			return kverrors.New("mandatory configuration - missing role bindings configuration")
+		}
+
+		if stack.Spec.Tenants.Authorization != nil && stack.Spec.Tenants.Authorization.OPA != nil {
+			return kverrors.New("extra configuration provided - OPA Url is not required")
 		}
 	}
 
@@ -28,6 +32,14 @@ func ValidateModes(stack lokiv1beta1.LokiStack) error {
 
 		if stack.Spec.Tenants.Authorization == nil || stack.Spec.Tenants.Authorization.OPA == nil {
 			return kverrors.New("mandatory configuration - missing OPA Url")
+		}
+
+		if stack.Spec.Tenants.Authorization != nil && stack.Spec.Tenants.Authorization.Roles != nil {
+			return kverrors.New("extra configuration provided - roles configuration is not required")
+		}
+
+		if stack.Spec.Tenants.Authorization != nil && stack.Spec.Tenants.Authorization.RoleBindings != nil {
+			return kverrors.New("extra configuration provided - role bindings configuration is not required")
 		}
 	}
 

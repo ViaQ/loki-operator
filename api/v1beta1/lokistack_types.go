@@ -90,9 +90,9 @@ type Subject struct {
 
 // RoleBindingsSpec binds a set of roles to a set of subjects.
 type RoleBindingsSpec struct {
-	Name     string     `json:"name"`
-	Subjects []*Subject `json:"subjects"`
-	Roles    []string   `json:"roles"`
+	Name     string    `json:"name"`
+	Subjects []Subject `json:"subjects"`
+	Roles    []string  `json:"roles"`
 }
 
 // PermissionType is a LokiStack Gateway RBAC permission.
@@ -121,7 +121,7 @@ type OPASpec struct {
 	//
 	// +required
 	// +kubebuilder:validation:Required
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OPA URL"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OpenPolicyAgent URL"
 	URL string `json:"url"`
 }
 
@@ -138,14 +138,14 @@ type AuthorizationSpec struct {
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Rbac Roles"
-	Roles []*RoleSpec `json:"roles"`
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Static Roles"
+	Roles []RoleSpec `json:"roles"`
 	// RoleBindings defines configuration to bind a set of roles to a set of subjects.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Rbac RoleBindings"
-	RoleBindings []*RoleBindingsSpec `json:"roleBindings"`
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Static Role Bindings"
+	RoleBindings []RoleBindingsSpec `json:"roleBindings"`
 }
 
 // TenantSecretSpec is a secret reference containing name only, no namespace.
@@ -200,7 +200,7 @@ type AuthenticationSpec struct {
 	//
 	// +required
 	// +kubebuilder:validation:Required
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OIDC Config"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OIDC Configuration"
 	OIDC *OIDCSpec `json:"oidc"`
 }
 
@@ -210,7 +210,8 @@ type AuthenticationSpec struct {
 type ModeType string
 
 const (
-	// Static mode needs a static rego file which assert the rbac file contents.
+	// Static mode asserts the Authorization Spec's Roles and RoleBindings
+	// using an in-process OpenPolicyAgent Rego authorizer.
 	Static ModeType = "static"
 	// Dynamic mode delegates the authorization to a third-party OPA-compatible endpoint.
 	Dynamic ModeType = "dynamic"
@@ -228,13 +229,13 @@ type TenantsSpec struct {
 	// +kubebuilder:default:=openshift-logging
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:static","urn:alm:descriptor:com.tectonic.ui:select:dynamic","urn:alm:descriptor:com.tectonic.ui:select:openshift-logging"},displayName="Mode"
 	Mode ModeType `json:"mode"`
-	// Authentication defines the lokistack-gateway component authentication configuration spec.
+	// Authentication defines the lokistack-gateway component authentication configuration spec per tenant.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Authentication"
-	Authentication []*AuthenticationSpec `json:"authentication,omitempty"`
-	// Authorization defines the lokistack-gateway component authorization configuration spec.
+	Authentication []AuthenticationSpec `json:"authentication,omitempty"`
+	// Authorization defines the lokistack-gateway component authorization configuration spec per tenant.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
@@ -555,8 +556,8 @@ const (
 	// ReasonInvalidReplicationConfiguration when the configurated replication factor is not valid
 	// with the select cluster size.
 	ReasonInvalidReplicationConfiguration LokiStackConditionReason = "InvalidReplicationConfiguration"
-	// ReasonMissingGatewayTenantSecret when the required secret for authentication
-	// of tenant is missing.
+	// ReasonMissingGatewayTenantSecret when the required tenant secret
+	// for authentication is missing.
 	ReasonMissingGatewayTenantSecret LokiStackConditionReason = "MissingGatewayTenantSecret"
 	// ReasonInvalidGatewayTenantSecret when the format of the secret is invalid.
 	ReasonInvalidGatewayTenantSecret LokiStackConditionReason = "InvalidGatewayTenantSecret"

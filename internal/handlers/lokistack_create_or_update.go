@@ -63,7 +63,7 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 		)
 	}
 
-	var gatewayTenants []*manifests.GatewaySecret
+	var tenantSecrets []*manifests.TenantSecrets
 	if stack.Spec.Tenants != nil {
 		if err = gateway.ValidateModes(stack); err != nil {
 			return kverrors.Wrap(err, "invalid configuration provided for given mode")
@@ -85,14 +85,14 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 				}
 
 				//nolint
-				gs, err := secrets.ExtractGatewaySecret(&gatewaySecret, tenant.Name)
+				ts, err := secrets.ExtractGatewaySecret(&gatewaySecret, tenant.Name)
 				if err != nil {
 					return status.SetDegradedCondition(ctx, k, req,
 						"Invalid gateway tenant secret contents",
 						lokiv1beta1.ReasonInvalidGatewayTenantSecret,
 					)
 				}
-				gatewayTenants = append(gatewayTenants, gs)
+				tenantSecrets = append(tenantSecrets, ts)
 			}
 		}
 	}
@@ -105,7 +105,7 @@ func CreateOrUpdateLokiStack(ctx context.Context, req ctrl.Request, k k8s.Client
 		Stack:         stack.Spec,
 		Flags:         flags,
 		ObjectStorage: *storage,
-		GatewaySecret: gatewayTenants,
+		TenantSecrets: tenantSecrets,
 	}
 
 	ll.Info("begin building manifests")

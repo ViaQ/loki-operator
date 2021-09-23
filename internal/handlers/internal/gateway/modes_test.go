@@ -11,13 +11,13 @@ import (
 func TestValidateModes_StaticMode(t *testing.T) {
 	type test struct {
 		name    string
-		wantErr bool
+		wantErr string
 		stack   lokiv1beta1.LokiStack
 	}
 	table := []test{
 		{
 			name:    "missing authentication spec",
-			wantErr: true,
+			wantErr: "mandatory configuration - missing tenants' authentication configuration",
 			stack: lokiv1beta1.LokiStack{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "LokiStack",
@@ -37,7 +37,7 @@ func TestValidateModes_StaticMode(t *testing.T) {
 		},
 		{
 			name:    "missing roles spec",
-			wantErr: true,
+			wantErr: "mandatory configuration - missing roles configuration",
 			stack: lokiv1beta1.LokiStack{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "LokiStack",
@@ -51,7 +51,7 @@ func TestValidateModes_StaticMode(t *testing.T) {
 					Size: lokiv1beta1.SizeOneXExtraSmall,
 					Tenants: &lokiv1beta1.TenantsSpec{
 						Mode: "static",
-						Authentication: []*lokiv1beta1.AuthenticationSpec{
+						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
 								Name: "test",
 								ID:   "1234",
@@ -72,7 +72,7 @@ func TestValidateModes_StaticMode(t *testing.T) {
 		},
 		{
 			name:    "missing role bindings spec",
-			wantErr: true,
+			wantErr: "mandatory configuration - missing role bindings configuration",
 			stack: lokiv1beta1.LokiStack{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "LokiStack",
@@ -86,7 +86,7 @@ func TestValidateModes_StaticMode(t *testing.T) {
 					Size: lokiv1beta1.SizeOneXExtraSmall,
 					Tenants: &lokiv1beta1.TenantsSpec{
 						Mode: "static",
-						Authentication: []*lokiv1beta1.AuthenticationSpec{
+						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
 								Name: "test",
 								ID:   "1234",
@@ -99,7 +99,7 @@ func TestValidateModes_StaticMode(t *testing.T) {
 							},
 						},
 						Authorization: &lokiv1beta1.AuthorizationSpec{
-							Roles: []*lokiv1beta1.RoleSpec{
+							Roles: []lokiv1beta1.RoleSpec{
 								{
 									Name:        "some-name",
 									Resources:   []string{"test"},
@@ -114,7 +114,8 @@ func TestValidateModes_StaticMode(t *testing.T) {
 			},
 		},
 		{
-			name: "all set",
+			name:    "extra OPA URL provided",
+			wantErr: "extra configuration provided - OPA Url is not required",
 			stack: lokiv1beta1.LokiStack{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "LokiStack",
@@ -128,7 +129,7 @@ func TestValidateModes_StaticMode(t *testing.T) {
 					Size: lokiv1beta1.SizeOneXExtraSmall,
 					Tenants: &lokiv1beta1.TenantsSpec{
 						Mode: "static",
-						Authentication: []*lokiv1beta1.AuthenticationSpec{
+						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
 								Name: "test",
 								ID:   "1234",
@@ -141,7 +142,10 @@ func TestValidateModes_StaticMode(t *testing.T) {
 							},
 						},
 						Authorization: &lokiv1beta1.AuthorizationSpec{
-							Roles: []*lokiv1beta1.RoleSpec{
+							OPA: &lokiv1beta1.OPASpec{
+								URL: "some-url",
+							},
+							Roles: []lokiv1beta1.RoleSpec{
 								{
 									Name:        "some-name",
 									Resources:   []string{"test"},
@@ -149,10 +153,64 @@ func TestValidateModes_StaticMode(t *testing.T) {
 									Permissions: []lokiv1beta1.PermissionType{"read"},
 								},
 							},
-							RoleBindings: []*lokiv1beta1.RoleBindingsSpec{
+							RoleBindings: []lokiv1beta1.RoleBindingsSpec{
 								{
 									Name: "some-name",
-									Subjects: []*lokiv1beta1.Subject{
+									Subjects: []lokiv1beta1.Subject{
+										{
+											Name: "sub-1",
+											Kind: "user",
+										},
+									},
+									Roles: []string{"some-role"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:    "all set",
+			wantErr: "",
+			stack: lokiv1beta1.LokiStack{
+				TypeMeta: metav1.TypeMeta{
+					Kind: "LokiStack",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "my-stack",
+					Namespace: "some-ns",
+					UID:       "b23f9a38-9672-499f-8c29-15ede74d3ece",
+				},
+				Spec: lokiv1beta1.LokiStackSpec{
+					Size: lokiv1beta1.SizeOneXExtraSmall,
+					Tenants: &lokiv1beta1.TenantsSpec{
+						Mode: "static",
+						Authentication: []lokiv1beta1.AuthenticationSpec{
+							{
+								Name: "test",
+								ID:   "1234",
+								OIDC: &lokiv1beta1.OIDCSpec{
+									IssuerURL:     "some-url",
+									RedirectURL:   "some-other-url",
+									GroupClaim:    "test",
+									UsernameClaim: "test",
+								},
+							},
+						},
+						Authorization: &lokiv1beta1.AuthorizationSpec{
+							Roles: []lokiv1beta1.RoleSpec{
+								{
+									Name:        "some-name",
+									Resources:   []string{"test"},
+									Tenants:     []string{"test"},
+									Permissions: []lokiv1beta1.PermissionType{"read"},
+								},
+							},
+							RoleBindings: []lokiv1beta1.RoleBindingsSpec{
+								{
+									Name: "some-name",
+									Subjects: []lokiv1beta1.Subject{
 										{
 											Name: "sub-1",
 											Kind: "user",
@@ -173,11 +231,8 @@ func TestValidateModes_StaticMode(t *testing.T) {
 			t.Parallel()
 
 			err := ValidateModes(tst.stack)
-			if !tst.wantErr {
-				require.NoError(t, err)
-			}
-			if tst.wantErr {
-				require.NotNil(t, err)
+			if tst.wantErr != "" {
+				require.EqualError(t, err, tst.wantErr)
 			}
 		})
 	}
@@ -186,13 +241,13 @@ func TestValidateModes_StaticMode(t *testing.T) {
 func TestValidateModes_DynamicMode(t *testing.T) {
 	type test struct {
 		name    string
-		wantErr bool
+		wantErr string
 		stack   lokiv1beta1.LokiStack
 	}
 	table := []test{
 		{
 			name:    "missing authentication spec",
-			wantErr: true,
+			wantErr: "mandatory configuration - missing tenants configuration",
 			stack: lokiv1beta1.LokiStack{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "LokiStack",
@@ -212,7 +267,7 @@ func TestValidateModes_DynamicMode(t *testing.T) {
 		},
 		{
 			name:    "missing OPA URL spec",
-			wantErr: true,
+			wantErr: "mandatory configuration - missing OPA Url",
 			stack: lokiv1beta1.LokiStack{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "LokiStack",
@@ -226,7 +281,7 @@ func TestValidateModes_DynamicMode(t *testing.T) {
 					Size: lokiv1beta1.SizeOneXExtraSmall,
 					Tenants: &lokiv1beta1.TenantsSpec{
 						Mode: "dynamic",
-						Authentication: []*lokiv1beta1.AuthenticationSpec{
+						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
 								Name: "test",
 								ID:   "1234",
@@ -246,7 +301,8 @@ func TestValidateModes_DynamicMode(t *testing.T) {
 			},
 		},
 		{
-			name: "all set",
+			name:    "extra roles configuration provided",
+			wantErr: "extra configuration provided - roles configuration is not required",
 			stack: lokiv1beta1.LokiStack{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "LokiStack",
@@ -260,7 +316,101 @@ func TestValidateModes_DynamicMode(t *testing.T) {
 					Size: lokiv1beta1.SizeOneXExtraSmall,
 					Tenants: &lokiv1beta1.TenantsSpec{
 						Mode: "dynamic",
-						Authentication: []*lokiv1beta1.AuthenticationSpec{
+						Authentication: []lokiv1beta1.AuthenticationSpec{
+							{
+								Name: "test",
+								ID:   "1234",
+								OIDC: &lokiv1beta1.OIDCSpec{
+									IssuerURL:     "some-url",
+									RedirectURL:   "some-other-url",
+									GroupClaim:    "test",
+									UsernameClaim: "test",
+								},
+							},
+						},
+						Authorization: &lokiv1beta1.AuthorizationSpec{
+							OPA: &lokiv1beta1.OPASpec{
+								URL: "some-url",
+							},
+							Roles: []lokiv1beta1.RoleSpec{
+								{
+									Name:        "some-name",
+									Resources:   []string{"test"},
+									Tenants:     []string{"test"},
+									Permissions: []lokiv1beta1.PermissionType{"read"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:    "extra role bindings configuration provided",
+			wantErr: "extra configuration provided - role bindings configuration is not required",
+			stack: lokiv1beta1.LokiStack{
+				TypeMeta: metav1.TypeMeta{
+					Kind: "LokiStack",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "my-stack",
+					Namespace: "some-ns",
+					UID:       "b23f9a38-9672-499f-8c29-15ede74d3ece",
+				},
+				Spec: lokiv1beta1.LokiStackSpec{
+					Size: lokiv1beta1.SizeOneXExtraSmall,
+					Tenants: &lokiv1beta1.TenantsSpec{
+						Mode: "dynamic",
+						Authentication: []lokiv1beta1.AuthenticationSpec{
+							{
+								Name: "test",
+								ID:   "1234",
+								OIDC: &lokiv1beta1.OIDCSpec{
+									IssuerURL:     "some-url",
+									RedirectURL:   "some-other-url",
+									GroupClaim:    "test",
+									UsernameClaim: "test",
+								},
+							},
+						},
+						Authorization: &lokiv1beta1.AuthorizationSpec{
+							OPA: &lokiv1beta1.OPASpec{
+								URL: "some-url",
+							},
+							RoleBindings: []lokiv1beta1.RoleBindingsSpec{
+								{
+									Name: "some-name",
+									Subjects: []lokiv1beta1.Subject{
+										{
+											Name: "sub-1",
+											Kind: "user",
+										},
+									},
+									Roles: []string{"some-role"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:    "all set",
+			wantErr: "",
+			stack: lokiv1beta1.LokiStack{
+				TypeMeta: metav1.TypeMeta{
+					Kind: "LokiStack",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "my-stack",
+					Namespace: "some-ns",
+					UID:       "b23f9a38-9672-499f-8c29-15ede74d3ece",
+				},
+				Spec: lokiv1beta1.LokiStackSpec{
+					Size: lokiv1beta1.SizeOneXExtraSmall,
+					Tenants: &lokiv1beta1.TenantsSpec{
+						Mode: "dynamic",
+						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
 								Name: "test",
 								ID:   "1234",
@@ -288,11 +438,8 @@ func TestValidateModes_DynamicMode(t *testing.T) {
 			t.Parallel()
 
 			err := ValidateModes(tst.stack)
-			if !tst.wantErr {
-				require.NoError(t, err)
-			}
-			if tst.wantErr {
-				require.NotNil(t, err)
+			if tst.wantErr != "" {
+				require.EqualError(t, err, tst.wantErr)
 			}
 		})
 	}
@@ -301,13 +448,13 @@ func TestValidateModes_DynamicMode(t *testing.T) {
 func TestValidateModes_OpenshiftLoggingMode(t *testing.T) {
 	type test struct {
 		name    string
-		wantErr bool
+		wantErr string
 		stack   lokiv1beta1.LokiStack
 	}
 	table := []test{
 		{
 			name:    "provided authentication spec",
-			wantErr: true,
+			wantErr: "extra configuration provided - tenants configuration is not required.",
 			stack: lokiv1beta1.LokiStack{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "LokiStack",
@@ -321,7 +468,7 @@ func TestValidateModes_OpenshiftLoggingMode(t *testing.T) {
 					Size: lokiv1beta1.SizeOneXExtraSmall,
 					Tenants: &lokiv1beta1.TenantsSpec{
 						Mode: "openshift-logging",
-						Authentication: []*lokiv1beta1.AuthenticationSpec{
+						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
 								Name: "test",
 								ID:   "1234",
@@ -339,7 +486,7 @@ func TestValidateModes_OpenshiftLoggingMode(t *testing.T) {
 		},
 		{
 			name:    "provided authorization spec",
-			wantErr: true,
+			wantErr: "extra configuration provided - authorization configuration is not required.",
 			stack: lokiv1beta1.LokiStack{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "LokiStack",
@@ -364,7 +511,8 @@ func TestValidateModes_OpenshiftLoggingMode(t *testing.T) {
 			},
 		},
 		{
-			name: "all set",
+			name:    "all set",
+			wantErr: "",
 			stack: lokiv1beta1.LokiStack{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "LokiStack",
@@ -389,11 +537,8 @@ func TestValidateModes_OpenshiftLoggingMode(t *testing.T) {
 			t.Parallel()
 
 			err := ValidateModes(tst.stack)
-			if !tst.wantErr {
-				require.NoError(t, err)
-			}
-			if tst.wantErr {
-				require.NotNil(t, err)
+			if tst.wantErr != "" {
+				require.EqualError(t, err, tst.wantErr)
 			}
 		})
 	}

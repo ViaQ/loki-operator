@@ -65,7 +65,7 @@ func NewGatewayDeployment(opts Options, sha1C string) *appsv1.Deployment {
 				},
 			},
 			{
-				Name: "observatorium",
+				Name: "lokistack-gateway",
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
@@ -122,10 +122,10 @@ func NewGatewayDeployment(opts Options, sha1C string) *appsv1.Deployment {
 						SubPath:   "tenants.yaml",
 					},
 					{
-						Name:      "observatorium",
+						Name:      "lokistack-gateway",
 						ReadOnly:  true,
 						MountPath: path.Join(gateway.LokiGatewayMountDir, gateway.LokiGatewayRegoFileName),
-						SubPath:   "observatorium.rego",
+						SubPath:   "lokistack-gateway.rego",
 					},
 				},
 				LivenessProbe: &corev1.Probe{
@@ -251,7 +251,7 @@ func gatewayConfigMap(opt Options) (*corev1.ConfigMap, string, error) {
 // gatewayConfigOptions converts Options to gateway.Options
 func gatewayConfigOptions(opt Options) gateway.Options {
 	var gatewaySecrets []*gateway.Secret
-	for _, secret := range opt.GatewaySecret {
+	for _, secret := range opt.TenantSecrets {
 		gatewaySecret := &gateway.Secret{
 			TenantName:   secret.TenantName,
 			ClientID:     secret.ClientID,
@@ -265,7 +265,7 @@ func gatewayConfigOptions(opt Options) gateway.Options {
 		Stack:         opt.Stack,
 		Namespace:     opt.Namespace,
 		Name:          opt.Name,
-		GatewaySecret: gatewaySecrets,
+		TenantSecrets: gatewaySecrets,
 	}
 }
 

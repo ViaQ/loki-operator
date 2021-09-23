@@ -279,7 +279,7 @@ spec:
         displayName: Tenants Configuration
         path: tenants
       - description: Authentication defines the lokistack-gateway component authentication
-          configuration spec.
+          configuration spec per tenant.
         displayName: Authentication
         path: tenants.authentication
       - description: ID defines the id of the tenant.
@@ -289,7 +289,7 @@ spec:
         displayName: Tenant Name
         path: tenants.authentication[0].name
       - description: OIDC defines the spec for the OIDC tenant's authentication.
-        displayName: OIDC Config
+        displayName: OIDC Configuration
         path: tenants.authentication[0].oidc
       - description: IssuerURL defines the URL for issuer.
         displayName: Issuer URL
@@ -307,7 +307,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
       - description: Authorization defines the lokistack-gateway component authorization
-          configuration spec.
+          configuration spec per tenant.
         displayName: Authorization
         path: tenants.authorization
       - description: OPA defines the spec for the third-party endpoint for tenant's
@@ -315,14 +315,14 @@ spec:
         displayName: OPA Config
         path: tenants.authorization.opa
       - description: URL defines the third-party endpoint for authorization.
-        displayName: OPA URL
+        displayName: OpenPolicyAgent URL
         path: tenants.authorization.opa.url
       - description: RoleBindings defines configuration to bind a set of roles to
           a set of subjects.
-        displayName: Rbac RoleBindings
+        displayName: Static Role Bindings
         path: tenants.authorization.roleBindings
       - description: Roles defines a set of permissions to interact with a tenant.
-        displayName: Rbac Roles
+        displayName: Static Roles
         path: tenants.authorization.roles
       - description: Mode defines the mode in which lokistack-gateway component will
           be configured.

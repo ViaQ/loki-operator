@@ -5,7 +5,7 @@ tenants:
 - name: {{ $spec.Name }}
   id: {{ $spec.ID }}
   oidc:
-    {{- range $secret := $l.GatewaySecret }}
+    {{- range $secret := $l.TenantSecrets }}
     {{- if eq $secret.TenantName $spec.Name -}}
     {{ if $secret.ClientID }}
     clientID: {{ $secret.ClientID }}
@@ -34,7 +34,7 @@ tenants:
 - name: {{ $spec.Name }}
   id: {{ $spec.ID }}
   oidc:
-    {{- range $secret := $l.GatewaySecret }}
+    {{- range $secret := $l.TenantSecrets }}
     {{- if eq $secret.TenantName $spec.Name -}}
     {{ if $secret.ClientID }}
     clientID: {{ $secret.ClientID }}
@@ -67,6 +67,7 @@ tenants:
   id: 32e45e3e-b760-43a2-a7e1-02c5631e56e9
   oidc:
     clientID: test
+    # TODO - these need to be replaced once we integrate dex into lokistack-gateway.
     clientSecret: ZXhhbXBsZS1hcHAtc2VjcmV0
     issuerCAPath: ./tmp/certs/ca.pem
     issuerURL: https://127.0.0.1:5556/dex
@@ -78,6 +79,7 @@ tenants:
   id: 40de0532-10a2-430c-9a00-62c46455c118
   oidc:
     clientID: test
+    # TODO - these need to be replaced once we integrate dex into lokistack-gateway.
     clientSecret: ZXhhbXBsZS1hcHAtc2VjcmV0
     issuerCAPath: ./tmp/certs/ca.pem
     issuerURL: https://127.0.0.1:5556/dex
@@ -89,6 +91,7 @@ tenants:
   id: 26d7c49d-182e-4d93-bade-510c6cc3243d
   oidc:
     clientID: test
+    # TODO - these need to be replaced once we integrate dex into lokistack-gateway.
     clientSecret: ZXhhbXBsZS1hcHAtc2VjcmV0
     issuerCAPath: ./tmp/certs/ca.pem
     issuerURL: https://127.0.0.1:5556/dex

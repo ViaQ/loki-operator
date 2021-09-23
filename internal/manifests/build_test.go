@@ -234,7 +234,7 @@ func TestBuildAll_WithFeatureFlags_EnableGateway(t *testing.T) {
 					Size: lokiv1beta1.SizeOneXSmall,
 					Tenants: &lokiv1beta1.TenantsSpec{
 						Mode: lokiv1beta1.Dynamic,
-						Authentication: []*lokiv1beta1.AuthenticationSpec{
+						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
 								Name: "test",
 								ID:   "1234",

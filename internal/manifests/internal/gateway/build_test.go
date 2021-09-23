@@ -1,13 +1,14 @@
 package gateway
 
 import (
+	"testing"
+
 	lokiv1beta1 "github.com/ViaQ/loki-operator/api/v1beta1"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestBuild(t *testing.T) {
-	exp := `
+	expTntCfg := `
 tenants:
 - name: test-a
   id: test
@@ -15,10 +16,8 @@ tenants:
     clientID: test
     clientSecret: test123
     issuerCAPath: /tmp/ca/path
-
     issuerURL: https://127.0.0.1:5556/dex
     redirectURL: https://localhost:8443/oidc/test-a/callback
-    
     usernameClaim: test
     groupClaim: test
   opa:
@@ -28,7 +27,7 @@ tenants:
 		Stack: lokiv1beta1.LokiStackSpec{
 			Tenants: &lokiv1beta1.TenantsSpec{
 				Mode: lokiv1beta1.Dynamic,
-				Authentication: []*lokiv1beta1.AuthenticationSpec{
+				Authentication: []lokiv1beta1.AuthenticationSpec{
 					{
 						Name: "test-a",
 						ID:   "test",
@@ -50,9 +49,9 @@ tenants:
 				},
 			},
 		},
-		Namespace:     "test-ns",
-		Name:          "test",
-		GatewaySecret: []*Secret{
+		Namespace: "test-ns",
+		Name:      "test",
+		TenantSecrets: []*Secret{
 			{
 				TenantName:   "test-a",
 				ClientID:     "test",
@@ -63,5 +62,5 @@ tenants:
 	}
 	_, tenantsConfig, _, err := Build(opts)
 	require.NoError(t, err)
-	require.YAMLEq(t, exp, string(tenantsConfig))
+	require.YAMLEq(t, expTntCfg, string(tenantsConfig))
 }

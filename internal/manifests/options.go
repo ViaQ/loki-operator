@@ -20,7 +20,7 @@ type Options struct {
 
 	ObjectStorage ObjectStorage
 
-	GatewaySecret []*GatewaySecret
+	TenantSecrets []*TenantSecrets
 }
 
 // ObjectStorage for storage config.
@@ -40,8 +40,8 @@ type FeatureFlags struct {
 	EnableGateway                   bool
 }
 
-// GatewaySecret for clientID, clientSecret and issuerCAPath for tenant's authentication.
-type GatewaySecret struct {
+// TenantSecrets for clientID, clientSecret and issuerCAPath for tenant's authentication.
+type TenantSecrets struct {
 	TenantName   string
 	ClientID     string
 	ClientSecret string
