@@ -675,6 +675,11 @@ func TestCreateOrUpdateLokiStack_WhenMissingGatewaySecret_SetDegraded(t *testing
 		},
 		Spec: lokiv1beta1.LokiStackSpec{
 			Size: lokiv1beta1.SizeOneXExtraSmall,
+			Storage: lokiv1beta1.ObjectStorageSpec{
+				Secret: lokiv1beta1.ObjectStorageSecretSpec{
+					Name: defaultSecret.Name,
+				},
+			},
 			Tenants: &lokiv1beta1.TenantsSpec{
 				Mode: "dynamic",
 				Authentication: []lokiv1beta1.AuthenticationSpec{
@@ -702,6 +707,10 @@ func TestCreateOrUpdateLokiStack_WhenMissingGatewaySecret_SetDegraded(t *testing
 	k.GetStub = func(_ context.Context, name types.NamespacedName, object client.Object) error {
 		if r.Name == name.Name && r.Namespace == name.Namespace {
 			k.SetClientObject(object, stack)
+			return nil
+		}
+		if defaultSecret.Name == name.Name {
+			k.SetClientObject(object, &defaultSecret)
 			return nil
 		}
 		return apierrors.NewNotFound(schema.GroupResource{}, "something is not found")
@@ -740,6 +749,11 @@ func TestCreateOrUpdateLokiStack_WhenInvalidGatewaySecret_SetDegraded(t *testing
 		},
 		Spec: lokiv1beta1.LokiStackSpec{
 			Size: lokiv1beta1.SizeOneXExtraSmall,
+			Storage: lokiv1beta1.ObjectStorageSpec{
+				Secret: lokiv1beta1.ObjectStorageSecretSpec{
+					Name: defaultSecret.Name,
+				},
+			},
 			Tenants: &lokiv1beta1.TenantsSpec{
 				Mode: "dynamic",
 				Authentication: []lokiv1beta1.AuthenticationSpec{
@@ -767,6 +781,10 @@ func TestCreateOrUpdateLokiStack_WhenInvalidGatewaySecret_SetDegraded(t *testing
 	k.GetStub = func(_ context.Context, name types.NamespacedName, object client.Object) error {
 		if r.Name == name.Name && r.Namespace == name.Namespace {
 			k.SetClientObject(object, stack)
+			return nil
+		}
+		if defaultSecret.Name == name.Name {
+			k.SetClientObject(object, &defaultSecret)
 			return nil
 		}
 		if name.Name == invalidSecret.Name {

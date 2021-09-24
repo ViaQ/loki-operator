@@ -12,8 +12,8 @@ spec:
   tenants:
     mode: static
     authentication:
-      - name: tenant-a
-        id: test
+      - tenantName: tenant-a
+        tenantId: test
         oidc:
           secret:
             name: test1
