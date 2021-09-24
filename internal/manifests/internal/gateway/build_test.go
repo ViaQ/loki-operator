@@ -49,8 +49,8 @@ roles:
 				Mode: lokiv1beta1.Static,
 				Authentication: []lokiv1beta1.AuthenticationSpec{
 					{
-						Name: "test-a",
-						ID:   "test",
+						TenantName: "test-a",
+						TenantID:   "test",
 						OIDC: &lokiv1beta1.OIDCSpec{
 							Secret: &lokiv1beta1.TenantSecretSpec{
 								Name: "test",
@@ -126,8 +126,8 @@ tenants:
 				Mode: lokiv1beta1.Dynamic,
 				Authentication: []lokiv1beta1.AuthenticationSpec{
 					{
-						Name: "test-a",
-						ID:   "test",
+						TenantName: "test-a",
+						TenantID:   "test",
 						OIDC: &lokiv1beta1.OIDCSpec{
 							Secret: &lokiv1beta1.TenantSecretSpec{
 								Name: "test",
@@ -177,7 +177,7 @@ tenants:
     redirectURL: https://localhost:8443/oidc/application/callback
     usernameClaim: name
   opa:
-    url: http://127.0.0.1:8080/v1/data/observatorium/allow
+    url: http://127.0.0.1:8080/v1/data/lokistack/allow
 - name: infrastructure
   id: 40de0532-10a2-430c-9a00-62c46455c118
   oidc:
@@ -188,7 +188,7 @@ tenants:
     redirectURL: https://localhost:8443/oidc/infrastructure/callback
     usernameClaim: name
   opa:
-    url: http://127.0.0.1:8080/v1/data/observatorium/allow
+    url: http://127.0.0.1:8080/v1/data/lokistack/allow
 - name: audit
   id: 26d7c49d-182e-4d93-bade-510c6cc3243d
   oidc:
@@ -199,7 +199,7 @@ tenants:
     redirectURL: https://localhost:8443/oidc/audit/callback
     usernameClaim: name
   opa:
-    url: http://127.0.0.1:8080/v1/data/observatorium/allow
+    url: http://127.0.0.1:8080/v1/data/lokistack/allow
 `
 	opts := Options{
 		Stack: lokiv1beta1.LokiStackSpec{

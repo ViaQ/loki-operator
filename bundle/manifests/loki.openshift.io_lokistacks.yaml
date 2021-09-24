@@ -585,22 +585,16 @@ spec:
                     type: object
                 type: object
               tenants:
-                description: Tenants defines the lokistack-gateway component tenants
-                  configuration spec.
+                description: Tenants defines the per-tenant authentication and authorization
+                  spec for the lokistack-gateway component.
                 properties:
                   authentication:
                     description: Authentication defines the lokistack-gateway component
                       authentication configuration spec per tenant.
                     items:
                       description: AuthenticationSpec defines the oidc configuration
-                        for lokiStack Gateway component.
+                        per tenant for lokiStack Gateway component.
                       properties:
-                        id:
-                          description: ID defines the id of the tenant.
-                          type: string
-                        name:
-                          description: Name defines the name of the tenant.
-                          type: string
                         oidc:
                           description: OIDC defines the spec for the OIDC tenant's
                             authentication.
@@ -633,10 +627,16 @@ spec:
                           - secret
                           - usernameClaim
                           type: object
+                        tenantId:
+                          description: TenantID defines the id of the tenant.
+                          type: string
+                        tenantName:
+                          description: TenantName defines the name of the tenant.
+                          type: string
                       required:
-                      - id
-                      - name
                       - oidc
+                      - tenantId
+                      - tenantName
                       type: object
                     type: array
                   authorization:

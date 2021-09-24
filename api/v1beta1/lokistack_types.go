@@ -126,13 +126,13 @@ type OPASpec struct {
 }
 
 // AuthorizationSpec defines the opa, role bindings and roles
-// configuration for lokiStack Gateway component.
+// configuration per tenant for lokiStack Gateway component.
 type AuthorizationSpec struct {
 	// OPA defines the spec for the third-party endpoint for tenant's authorization.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OPA Config"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OPA Configuration"
 	OPA *OPASpec `json:"opa"`
 	// Roles defines a set of permissions to interact with a tenant.
 	//
@@ -148,7 +148,8 @@ type AuthorizationSpec struct {
 	RoleBindings []RoleBindingsSpec `json:"roleBindings"`
 }
 
-// TenantSecretSpec is a secret reference containing name only, no namespace.
+// TenantSecretSpec is a secret reference containing name only
+// for a secret living in the same namespace as the LokiStack custom resource.
 type TenantSecretSpec struct {
 	// Name of a secret in the namespace configured for tenant secrets.
 	//
@@ -182,20 +183,20 @@ type OIDCSpec struct {
 	UsernameClaim string `json:"usernameClaim"`
 }
 
-// AuthenticationSpec defines the oidc configuration for lokiStack Gateway component.
+// AuthenticationSpec defines the oidc configuration per tenant for lokiStack Gateway component.
 type AuthenticationSpec struct {
-	// Name defines the name of the tenant.
+	// TenantName defines the name of the tenant.
 	//
 	// +required
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tenant Name"
-	Name string `json:"name"`
-	// ID defines the id of the tenant.
+	TenantName string `json:"tenantName"`
+	// TenantID defines the id of the tenant.
 	//
 	// +required
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tenant ID"
-	ID string `json:"id"`
+	TenantID string `json:"tenantId"`
 	// OIDC defines the spec for the OIDC tenant's authentication.
 	//
 	// +required
@@ -204,7 +205,7 @@ type AuthenticationSpec struct {
 	OIDC *OIDCSpec `json:"oidc"`
 }
 
-// ModeType is the mode in which LokiStack Gateway will be configured.
+// ModeType is the authentication/authorization mode in which LokiStack Gateway will be configured.
 //
 // +kubebuilder:validation:Enum=static;dynamic;openshift-logging
 type ModeType string
@@ -215,7 +216,7 @@ const (
 	Static ModeType = "static"
 	// Dynamic mode delegates the authorization to a third-party OPA-compatible endpoint.
 	Dynamic ModeType = "dynamic"
-	// OpenshiftLogging mode is the full OpenShift in-cluster support.
+	// OpenshiftLogging mode provides fully automatic OpenShift in-cluster authentication and authorization support.
 	OpenshiftLogging ModeType = "openshift-logging"
 )
 
@@ -512,7 +513,7 @@ type LokiStackSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:com.tectonic.ui:advanced",displayName="Node Placement"
 	Template *LokiTemplateSpec `json:"template,omitempty"`
 
-	// Tenants defines the lokistack-gateway component tenants configuration spec.
+	// Tenants defines the per-tenant authentication and authorization spec for the lokistack-gateway component.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
@@ -561,6 +562,8 @@ const (
 	ReasonMissingGatewayTenantSecret LokiStackConditionReason = "MissingGatewayTenantSecret"
 	// ReasonInvalidGatewayTenantSecret when the format of the secret is invalid.
 	ReasonInvalidGatewayTenantSecret LokiStackConditionReason = "InvalidGatewayTenantSecret"
+	// ReasonInvalidTenantsConfiguration when the tenant configuration provided is invalid.
+	ReasonInvalidTenantsConfiguration LokiStackConditionReason = "InvalidTenantsConfiguration"
 )
 
 // PodStatusMap defines the type for mapping pod status to pod name.

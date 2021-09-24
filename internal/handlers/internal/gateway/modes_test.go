@@ -53,8 +53,8 @@ func TestValidateModes_StaticMode(t *testing.T) {
 						Mode: "static",
 						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
-								Name: "test",
-								ID:   "1234",
+								TenantName: "test",
+								TenantID:   "1234",
 								OIDC: &lokiv1beta1.OIDCSpec{
 									IssuerURL:     "some-url",
 									RedirectURL:   "some-other-url",
@@ -88,8 +88,8 @@ func TestValidateModes_StaticMode(t *testing.T) {
 						Mode: "static",
 						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
-								Name: "test",
-								ID:   "1234",
+								TenantName: "test",
+								TenantID:   "1234",
 								OIDC: &lokiv1beta1.OIDCSpec{
 									IssuerURL:     "some-url",
 									RedirectURL:   "some-other-url",
@@ -114,8 +114,8 @@ func TestValidateModes_StaticMode(t *testing.T) {
 			},
 		},
 		{
-			name:    "extra OPA URL provided",
-			wantErr: "extra configuration provided - OPA Url is not required",
+			name:    "incompatible OPA URL provided",
+			wantErr: "incompatible configuration - OPA URL not required for mode static",
 			stack: lokiv1beta1.LokiStack{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "LokiStack",
@@ -131,8 +131,8 @@ func TestValidateModes_StaticMode(t *testing.T) {
 						Mode: "static",
 						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
-								Name: "test",
-								ID:   "1234",
+								TenantName: "test",
+								TenantID:   "1234",
 								OIDC: &lokiv1beta1.OIDCSpec{
 									IssuerURL:     "some-url",
 									RedirectURL:   "some-other-url",
@@ -188,8 +188,8 @@ func TestValidateModes_StaticMode(t *testing.T) {
 						Mode: "static",
 						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
-								Name: "test",
-								ID:   "1234",
+								TenantName: "test",
+								TenantID:   "1234",
 								OIDC: &lokiv1beta1.OIDCSpec{
 									IssuerURL:     "some-url",
 									RedirectURL:   "some-other-url",
@@ -283,8 +283,8 @@ func TestValidateModes_DynamicMode(t *testing.T) {
 						Mode: "dynamic",
 						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
-								Name: "test",
-								ID:   "1234",
+								TenantName: "test",
+								TenantID:   "1234",
 								OIDC: &lokiv1beta1.OIDCSpec{
 									IssuerURL:     "some-url",
 									RedirectURL:   "some-other-url",
@@ -301,8 +301,8 @@ func TestValidateModes_DynamicMode(t *testing.T) {
 			},
 		},
 		{
-			name:    "extra roles configuration provided",
-			wantErr: "extra configuration provided - roles configuration is not required",
+			name:    "incompatible roles configuration provided",
+			wantErr: "incompatible configuration - static roles not required for mode dynamic",
 			stack: lokiv1beta1.LokiStack{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "LokiStack",
@@ -318,8 +318,8 @@ func TestValidateModes_DynamicMode(t *testing.T) {
 						Mode: "dynamic",
 						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
-								Name: "test",
-								ID:   "1234",
+								TenantName: "test",
+								TenantID:   "1234",
 								OIDC: &lokiv1beta1.OIDCSpec{
 									IssuerURL:     "some-url",
 									RedirectURL:   "some-other-url",
@@ -346,8 +346,8 @@ func TestValidateModes_DynamicMode(t *testing.T) {
 			},
 		},
 		{
-			name:    "extra role bindings configuration provided",
-			wantErr: "extra configuration provided - role bindings configuration is not required",
+			name:    "incompatible roleBindings configuration provided",
+			wantErr: "incompatible configuration - static roleBindings not required for mode dynamic",
 			stack: lokiv1beta1.LokiStack{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "LokiStack",
@@ -363,8 +363,8 @@ func TestValidateModes_DynamicMode(t *testing.T) {
 						Mode: "dynamic",
 						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
-								Name: "test",
-								ID:   "1234",
+								TenantName: "test",
+								TenantID:   "1234",
 								OIDC: &lokiv1beta1.OIDCSpec{
 									IssuerURL:     "some-url",
 									RedirectURL:   "some-other-url",
@@ -412,8 +412,8 @@ func TestValidateModes_DynamicMode(t *testing.T) {
 						Mode: "dynamic",
 						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
-								Name: "test",
-								ID:   "1234",
+								TenantName: "test",
+								TenantID:   "1234",
 								OIDC: &lokiv1beta1.OIDCSpec{
 									IssuerURL:     "some-url",
 									RedirectURL:   "some-other-url",
@@ -453,8 +453,8 @@ func TestValidateModes_OpenshiftLoggingMode(t *testing.T) {
 	}
 	table := []test{
 		{
-			name:    "provided authentication spec",
-			wantErr: "extra configuration provided - tenants configuration is not required.",
+			name:    "incompatible authentication spec provided",
+			wantErr: "incompatible configuration - custom tenants configuration not required",
 			stack: lokiv1beta1.LokiStack{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "LokiStack",
@@ -470,8 +470,8 @@ func TestValidateModes_OpenshiftLoggingMode(t *testing.T) {
 						Mode: "openshift-logging",
 						Authentication: []lokiv1beta1.AuthenticationSpec{
 							{
-								Name: "test",
-								ID:   "1234",
+								TenantName: "test",
+								TenantID:   "1234",
 								OIDC: &lokiv1beta1.OIDCSpec{
 									IssuerURL:     "some-url",
 									RedirectURL:   "some-other-url",
@@ -485,8 +485,8 @@ func TestValidateModes_OpenshiftLoggingMode(t *testing.T) {
 			},
 		},
 		{
-			name:    "provided authorization spec",
-			wantErr: "extra configuration provided - authorization configuration is not required.",
+			name:    "incompatible authorization spec provided",
+			wantErr: "incompatible configuration - custom tenants configuration not required",
 			stack: lokiv1beta1.LokiStack{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "LokiStack",

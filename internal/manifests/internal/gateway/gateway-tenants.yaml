@@ -2,11 +2,11 @@ tenants:
 {{- if $l := . -}}
 {{- if eq $l.Stack.Tenants.Mode "static" -}}
 {{- range $spec := $l.Stack.Tenants.Authentication }}
-- name: {{ $spec.Name }}
-  id: {{ $spec.ID }}
+- name: {{ $spec.TenantName }}
+  id: {{ $spec.TenantID }}
   oidc:
     {{- range $secret := $l.TenantSecrets }}
-    {{- if eq $secret.TenantName $spec.Name -}}
+    {{- if eq $secret.TenantName $spec.TenantName -}}
     {{ if $secret.ClientID }}
     clientID: {{ $secret.ClientID }}
     {{- end -}}
@@ -37,11 +37,11 @@ tenants:
 {{- else if eq $l.Stack.Tenants.Mode "dynamic" -}}
 {{- if $tenant := $l.Stack.Tenants -}}
 {{- range $spec := $tenant.Authentication }}
-- name: {{ $spec.Name }}
-  id: {{ $spec.ID }}
+- name: {{ $spec.TenantName }}
+  id: {{ $spec.TenantID }}
   oidc:
     {{- range $secret := $l.TenantSecrets }}
-    {{- if eq $secret.TenantName $spec.Name -}}
+    {{- if eq $secret.TenantName $spec.TenantName -}}
     {{ if $secret.ClientID }}
     clientID: {{ $secret.ClientID }}
     {{- end -}}
@@ -80,7 +80,7 @@ tenants:
     redirectURL: https://localhost:8443/oidc/application/callback
     usernameClaim: name
   opa:
-    url: http://127.0.0.1:8080/v1/data/observatorium/allow
+    url: http://127.0.0.1:8080/v1/data/lokistack/allow
 - name: infrastructure
   id: 40de0532-10a2-430c-9a00-62c46455c118
   oidc:
@@ -92,7 +92,7 @@ tenants:
     redirectURL: https://localhost:8443/oidc/infrastructure/callback
     usernameClaim: name
   opa:
-    url: http://127.0.0.1:8080/v1/data/observatorium/allow
+    url: http://127.0.0.1:8080/v1/data/lokistack/allow
 - name: audit
   id: 26d7c49d-182e-4d93-bade-510c6cc3243d
   oidc:
@@ -104,6 +104,6 @@ tenants:
     redirectURL: https://localhost:8443/oidc/audit/callback
     usernameClaim: name
   opa:
-    url: http://127.0.0.1:8080/v1/data/observatorium/allow
+    url: http://127.0.0.1:8080/v1/data/lokistack/allow
 {{- end -}}
 {{- end -}}

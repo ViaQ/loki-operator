@@ -295,20 +295,14 @@ spec:
         path: template.queryFrontend.replicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Tenants defines the lokistack-gateway component tenants configuration
-          spec.
+      - description: Tenants defines the per-tenant authentication and authorization
+          spec for the lokistack-gateway component.
         displayName: Tenants Configuration
         path: tenants
       - description: Authentication defines the lokistack-gateway component authentication
           configuration spec per tenant.
         displayName: Authentication
         path: tenants.authentication
-      - description: ID defines the id of the tenant.
-        displayName: Tenant ID
-        path: tenants.authentication[0].id
-      - description: Name defines the name of the tenant.
-        displayName: Tenant Name
-        path: tenants.authentication[0].name
       - description: OIDC defines the spec for the OIDC tenant's authentication.
         displayName: OIDC Configuration
         path: tenants.authentication[0].oidc
@@ -327,13 +321,19 @@ spec:
         path: tenants.authentication[0].oidc.secret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: TenantID defines the id of the tenant.
+        displayName: Tenant ID
+        path: tenants.authentication[0].tenantId
+      - description: TenantName defines the name of the tenant.
+        displayName: Tenant Name
+        path: tenants.authentication[0].tenantName
       - description: Authorization defines the lokistack-gateway component authorization
           configuration spec per tenant.
         displayName: Authorization
         path: tenants.authorization
       - description: OPA defines the spec for the third-party endpoint for tenant's
           authorization.
-        displayName: OPA Config
+        displayName: OPA Configuration
         path: tenants.authorization.opa
       - description: URL defines the third-party endpoint for authorization.
         displayName: OpenPolicyAgent URL
