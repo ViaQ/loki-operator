@@ -101,6 +101,9 @@ bin/loki-broker: $(GO_FILES) | generate
 manager: deps generate ## Build manager binary
 	go build -o bin/manager main.go
 
+size-calculator: deps generate
+	go build -o bin/size-calculator main.go
+
 go-generate: ## Run go generate
 	go generate ./...
 
@@ -176,6 +179,7 @@ olm-deploy: olm-deploy-bundle olm-deploy-operator $(OPERATOR_SDK)
 	kubectl create ns $(CLUSTER_LOGGING_NS)
 	kubectl label ns/$(CLUSTER_LOGGING_NS) openshift.io/cluster-monitoring=true --overwrite
 	$(OPERATOR_SDK) run bundle -n $(CLUSTER_LOGGING_NS) --install-mode OwnNamespace $(BUNDLE_IMG)
+	kubectl -n $(CLUSTER_LOGGING_NS) apply -f hack/logfile_metric_daemonset.yaml
 endif
 
 # Build and push the secret for the S3 storage

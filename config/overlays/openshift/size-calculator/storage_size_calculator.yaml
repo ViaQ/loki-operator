@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storage-size-calculator
+  namespace: openshift-logging
+spec:
+  selector:
+    matchLabels:
+      name: loki-operator-size-calculator
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: loki-operator-size-calculator
+    spec:
+      containers:
+        - command:
+          - /size-calculator
+          image: quay.io/sasagarw/loki-operator:v0.1.32
+          imagePullPolicy: IfNotPresent
+          name: manager
+          ports:
+          - containerPort: 8080
+            name: metrics
+          securityContext:
+            allowPrivilegeEscalation: false
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      terminationGracePeriodSeconds: 10

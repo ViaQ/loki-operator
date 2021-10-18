@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: log-file-metric-exporter
+  labels:
+    app.kubernetes.io/instance: loki-operator-v0.0.1
+    app.kubernetes.io/managed-by: operator-lifecycle-manager
+    app.kubernetes.io/name: loki-operator
+    app.kubernetes.io/part-of: cluster-logging
+    app.kubernetes.io/version: 0.0.1
+    name: log-file-metric-exporter
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: loki-operator-v0.0.1
+      app.kubernetes.io/managed-by: operator-lifecycle-manager
+      app.kubernetes.io/name: loki-operator
+      app.kubernetes.io/part-of: cluster-logging
+      app.kubernetes.io/version: 0.0.1
+      name: log-file-metric-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: loki-operator-v0.0.1
+        app.kubernetes.io/managed-by: operator-lifecycle-manager
+        app.kubernetes.io/name: loki-operator
+        app.kubernetes.io/part-of: cluster-logging
+        app.kubernetes.io/version: 0.0.1
+        name: log-file-metric-exporter
+    spec:
+      nodeSelector:
+        kubernetes.io/os: linux
+      containers:
+        - name: log-file-metric-exporter
+          image: quay.io/openshift-logging/log-file-metric-exporter:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/local/bin/log-file-metric-exporter
+            - -verbosity=2
+            - -dir=/var/log/containers
+            - -http=:2112
+            - -keyFile=/var/run/secrets/serving-cert/tls.key
+            - -crtFile=/var/run/secrets/serving-cert/tls.crt
+          ports:
+            - containerPort: 2112
+              name: logfile-metrics
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /var/run/secrets/serving-cert
+              name: loki-operator-logfile-metrics
+            - mountPath: /var/log
+              name: loki-operator-varlog
+            - name: kube-api-access-kwbqc
+              readOnly: true
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          securityContext:
+            seLinuxOptions:
+              type: spc_t
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+      serviceAccount: loki-operator-logfile-metric
+      volumes:
+        - name: loki-operator-logfile-metrics
+          secret:
+            defaultMode: 420
+            optional: true
+            secretName: loki-operator-logfile-metrics
+        - name: loki-operator-varlog
+          hostPath:
+            path: /var/log
+        - name: kube-api-access-kwbqc
+          projected:
+            sources:
+              - serviceAccountToken:
+                  expirationSeconds: 3607
+                  path: token
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+              - downwardAPI:
+                  items:
+                    - path: namespace
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
+              - configMap:
+                  name: openshift-service-ca.crt
+                  items:
+                    - key: service-ca.crt
+                      path: service-ca.crt
+            defaultMode: 420
