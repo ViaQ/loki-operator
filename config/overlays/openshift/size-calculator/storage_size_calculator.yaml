@@ -14,26 +14,52 @@ spec:
         name: loki-operator-size-calculator
     spec:
       containers:
-        - command:
-          - /size-calculator
-          image: quay.io/sasagarw/loki-operator:v0.1.32
-          imagePullPolicy: IfNotPresent
-          name: manager
-          ports:
-          - containerPort: 8080
-            name: metrics
-          securityContext:
-            allowPrivilegeEscalation: false
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8081
-            initialDelaySeconds: 15
-            periodSeconds: 20
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: 8081
-            initialDelaySeconds: 5
-            periodSeconds: 10
+      - image: quay.io/sasagarw/loki-operator:v0.1.54
+        imagePullPolicy: IfNotPresent
+        name: storage-size-calculator
+        ports:
+        - containerPort: 8080
+          name: metrics
+        securityContext:
+          allowPrivilegeEscalation: false
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+          - name: storage-size-calculator-ca-bundle
+            readOnly: true
+            mountPath: /var/run/ca
+        env:
+        - name: PROMETHEUS_URL
+          valueFrom:
+            secretKeyRef:
+              name: promsecret
+              key: prometheus_url
+        - name: PROMETHEUS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: promsecret
+              key: prometheus_token
+      initContainers:
+      - command:
+        - /bin/sh
+        - -c
+        - |
+        image: quay.io/sasagarw/loki-operator:v0.1.54
+        name: storage-size-calculator-init
+        imagePullPolicy: IfNotPresent
       terminationGracePeriodSeconds: 10
+      volumes:
+        - name: storage-size-calculator-ca-bundle
+          configMap:
+            defaultMode: 420
+            name: storage-size-calculator-ca-bundle

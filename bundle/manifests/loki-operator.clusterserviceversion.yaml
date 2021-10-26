@@ -59,9 +59,6 @@ spec:
       - kind: ConfigMap
         name: ""
         version: v1
-      - kind: DaemonSet
-        name: ""
-        version: v1
       - kind: Deployment
         name: ""
         version: v1

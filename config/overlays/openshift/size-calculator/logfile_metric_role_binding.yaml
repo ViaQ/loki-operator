@@ -1,0 +1,11 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: logfile-metric-privileged-binding
+subjects:
+  - kind: ServiceAccount
+    name: logfile-metric
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: logfile-metric-privileged

@@ -1,4 +1,22 @@
 resources:
-- cluster-monitoring-config.yaml
-- user-workload-monitoring-config.yaml
-- log_file_metric_exporter.yaml
+- logfile_metric_daemonset.yaml
+- logfile_metric_role.yaml
+- logfile_metric_role_binding.yaml
+- logfile_metric_scc.yaml
+- logfile_metric_service.yaml
+- logfile_metric_service_account.yaml
+- logfile_metric_service_monitor.yaml
+- storage_size_calculator_config.yaml
+
+# Adds namespace to all resources.
+namespace: openshift-logging
+
+# Labels to add to all resources and selectors.
+# commonLabels:
+#  someName: someValue
+commonLabels:
+  app.kubernetes.io/name: loki-operator
+  app.kubernetes.io/instance: loki-operator-v0.0.1
+  app.kubernetes.io/version: "0.0.1"
+  app.kubernetes.io/part-of: loki-operator
+  app.kubernetes.io/managed-by: operator-lifecycle-manager

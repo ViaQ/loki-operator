@@ -179,7 +179,6 @@ olm-deploy: olm-deploy-bundle olm-deploy-operator $(OPERATOR_SDK)
 	kubectl create ns $(CLUSTER_LOGGING_NS)
 	kubectl label ns/$(CLUSTER_LOGGING_NS) openshift.io/cluster-monitoring=true --overwrite
 	$(OPERATOR_SDK) run bundle -n $(CLUSTER_LOGGING_NS) --install-mode OwnNamespace $(BUNDLE_IMG)
-	kubectl -n $(CLUSTER_LOGGING_NS) apply -f hack/logfile_metric_daemonset.yaml
 endif
 
 # Build and push the secret for the S3 storage
@@ -195,3 +194,13 @@ olm-deploy-example: olm-deploy olm-deploy-example-storage-secret ## Deploy examp
 olm-undeploy: $(OPERATOR_SDK) ## Cleanup deployments of the operator bundle and the operator via OLM on an OpenShift cluster selected via KUBECONFIG.
 	$(OPERATOR_SDK) cleanup loki-operator
 	kubectl delete ns $(CLUSTER_LOGGING_NS)
+
+.PHONY: deploy-size-calculator
+deploy-size-calculator:  $(KUSTOMIZE) ## Deploy storage size calculator
+	kubectl apply -f config/overlays/openshift/size-calculator/cluster_monitoring_config.yaml
+	kubectl apply -f config/overlays/openshift/size-calculator/user_workload_monitoring_config.yaml
+	$(KUSTOMIZE) build config/overlays/openshift/size-calculator | kubectl apply -f -
+
+.PHONY: undeploy-size-calculator
+undeploy-size-calculator: ## Undeploy storage size calculator
+	$(KUSTOMIZE) build config/overlays/openshift/size-calculator | kubectl delete -f -
