@@ -1,4 +1,4 @@
-# Loki Operator Hack
+# Hacking on Loki Operator
 
 Loki Operator is the Kubernetes Operator for [Loki](https://grafana.com/docs/loki/latest/) provided by the Red Hat OpenShift engineering team.
 
@@ -38,10 +38,28 @@ Loki Operator is the Kubernetes Operator for [Loki](https://grafana.com/docs/lok
 
   This will create `distributor`, `compactor`, `ingester`, `querier`, `query-frontend` and `lokistack-gateway` components.
 
-  Confirm that all are up and running using:
+  Confirm that all are up and running for `deployments` using:
+
+  ```console  
+  kubectl rollout status deployment/<DEPLOYMENT_NAME>
+  ```  
+
+  where `<DEPLOYMENT_NAME>` is the name of the deployment and can be found using:
 
   ```console
-  kubectl get pods
+  kubectl get deployments
+  ```
+
+  Confirm that all are up and running for `statefulsets` using:
+
+  ```console  
+  kubectl rollout status statefulset/<STATEFULSET_NAME>  
+  ```  
+
+  where `<STATEFULSET_NAME>` is the name of the statefulset and can be found using:
+
+  ```console
+  kubectl get statefulsets
   ```
 
   _Note:_  `lokistack-gateway` is an optional component deployed as part of Loki Operator. It provides secure access to Loki's distributor (i.e. for pushing logs) and query-frontend (i.e. for querying logs) via consulting an OAuth/OIDC endpoint for the request subject.
@@ -52,7 +70,7 @@ Loki Operator is the Kubernetes Operator for [Loki](https://grafana.com/docs/lok
   kubectl edit deployment/controller-manager
   ```
 
-  Delete the `args` part in it and save the file. This will update the deployment and now you can create LokiStack instance using:
+  Delete the flag `--with-lokistack-gateway` from the `args` section and save the file. This will update the deployment and now you can create LokiStack instance using:
 
   ```console
   kubectl apply -f hack/lokistack_dev.yaml
@@ -60,13 +78,24 @@ Loki Operator is the Kubernetes Operator for [Loki](https://grafana.com/docs/lok
 
   This will create `distributor`, `compactor`, `ingester`, `querier` and `query-frontend` components only.
 
+### Cleanup
+
+To cleanup deployments of the operator, you can use:
+
+```console
+make undeploy
+```
+
+It will undeploy controller from the configured Kubernetes cluster in ~/.kube/config
+
 ## Hacking on Loki Operator on OpenShift
 
 ### Requirements
 
 * Install [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) or [Openshift CLI](https://docs.openshift.com/container-platform/latest/cli_reference/openshift_cli/getting-started-cli.html) for communicating with the cluster. The guide below will be using `kubectl` for the same.
-* Create a running OpenShift cluster.
+* Create a running OpenShift cluster on AWS.
 * A container registry that you and your OpenShift cluster can reach. We recommend  [quay.io](https://quay.io/signin/).
+* Create an [S3 bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-bucket-overview.html) in one of the AWS Regions.
 
 ### Installation of Loki Operator
 
@@ -108,10 +137,28 @@ Loki Operator is the Kubernetes Operator for [Loki](https://grafana.com/docs/lok
 
   This will create `distributor`, `compactor`, `ingester`, `querier`, `query-frontend` and `lokistack-gateway` components.
 
-  Confirm that all are up and running using:
+  Confirm that all are up and running for `deployments` using:
+
+  ```console  
+  kubectl rollout status deployment/<DEPLOYMENT_NAME>
+  ```  
+
+  where `<DEPLOYMENT_NAME>` is the name of the deployment and can be found using:
 
   ```console
-  kubectl get pods
+  kubectl get deployments
+  ```
+
+  Confirm that all are up and running for `statefulsets` using:
+
+  ```console  
+  kubectl rollout status statefulset/<STATEFULSET_NAME>  
+  ```  
+
+  where `<STATEFULSET_NAME>` is the name of the statefulset and can be found using:
+
+  ```console
+  kubectl get statefulsets
   ```
 
   _Note:_  `lokistack-gateway` is an optional component deployed as part of Loki Operator. It provides secure access to Loki's distributor (i.e. for pushing logs) and query-frontend (i.e. for querying logs) via consulting an OAuth/OIDC endpoint for the request subject.
@@ -122,13 +169,23 @@ Loki Operator is the Kubernetes Operator for [Loki](https://grafana.com/docs/lok
   kubectl edit deployment/loki-operator-controller-manager
   ```
 
-  Delete the `args` part in it and save the file. This will update the deployment and now you can create LokiStack instance using:
+  Delete the flag `--with-lokistack-gateway` from the `args` section and save the file. This will update the deployment and now you can create LokiStack instance using:
 
   ```console
   kubectl apply -f hack/lokistack_dev.yaml
   ```
 
   This will create `distributor`, `compactor`, `ingester`, `querier` and `query-frontend` components only.
+
+### Cleanup
+
+To cleanup deployments of the operator, you can use:
+
+```console
+make olm-undeploy
+```
+
+It will cleanup deployments of the operator bundle and the operator via OLM on an OpenShift cluster selected via ~/.kube/config
 
 ## Basic Troubleshooting on Hacking on Loki Operator
 
