@@ -1,0 +1,302 @@
+---
+data:
+  promtail.yaml: |-
+    clients:
+      - backoff_config:
+          max_period: 5m
+          max_retries: 20
+          min_period: 1s
+        batchsize: 102400
+        batchwait: 10s
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        timeout: 10s
+        tenant_id: 4a5bb098-7caf-42ec-9b1a-8e1d979bfb95
+        url: http://lokistack-gateway-http-lokistack-dev.openshift-logging.svc:8080/api/logs/v1/application/loki/api/v1/push
+    positions:
+      filename: "/run/promtail/positions.yaml"
+    scrape_configs:
+    - job_name: kubernetes
+      kubernetes_sd_configs:
+      - role: pod
+      pipeline_stages:
+      - cri: {}
+      - labeldrop:
+        - filename
+      - pack:
+          labels:
+          - namespace
+          - pod_name
+          - container_name
+          - app
+      - labelallow:
+          - host
+          - invoker
+      relabel_configs:
+      - source_labels:
+        - __meta_kubernetes_pod_label_name
+        target_label: __service__
+      - source_labels:
+        - __meta_kubernetes_pod_node_name
+        target_label: __host__
+      - action: replace
+        replacement:
+        separator: "/"
+        source_labels:
+        - __meta_kubernetes_namespace
+        - __service__
+        target_label: job
+      - action: replace
+        source_labels:
+        - __meta_kubernetes_namespace
+        target_label: namespace
+      - action: replace
+        source_labels:
+        - __meta_kubernetes_pod_name
+        target_label: pod_name
+      - action: replace
+        source_labels:
+        - __meta_kubernetes_pod_container_name
+        target_label: container_name
+      - replacement: /var/log/pods/*\$1/*.log
+        separator: "/"
+        source_labels:
+        - __meta_kubernetes_pod_uid
+        - __meta_kubernetes_pod_container_name
+        target_label: __path__
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+    server:
+      http_listen_port: 3101
+    target_config:
+      sync_period: 10s
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-promtail
+  namespace: openshift-logging
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: loki-promtail
+  namespace: openshift-logging
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: log-collector
+      app.kubernetes.io/instance: loki-promtail
+      app.kubernetes.io/name: promtail
+      app.kubernetes.io/part-of: loki
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: log-collector
+        app.kubernetes.io/instance: loki-promtail
+        app.kubernetes.io/name: promtail
+        app.kubernetes.io/part-of: loki
+        app.kubernetes.io/version: v2.2.1
+    spec:
+      containers:
+      - command:
+        - sh
+        - -c
+        - |
+          promtail \
+            -config.file=/etc/promtail/promtail.yaml
+        env:
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: quay.io/openshift-logging/promtail:v2.2.1
+        name: promtail
+        ports:
+        - containerPort: 3101
+          name: http-metrics
+        readinessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: "/ready"
+            port: http-metrics
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        securityContext:
+          privileged: true
+          readOnlyRootFilesystem: true
+          runAsGroup: 0
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: "/etc/promtail"
+          name: config
+        - mountPath: "/run/promtail"
+          name: run
+        - mountPath: "/var/lib/docker/containers"
+          name: docker
+          readOnly: true
+        - mountPath: "/var/log/pods"
+          name: pods
+          readOnly: true
+        - mountPath: "/var/log/journal"
+          name: journal
+          readOnly: true
+      serviceAccountName: loki-promtail
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+      volumes:
+      - configMap:
+          name: loki-promtail
+        name: config
+      - hostPath:
+          path: "/run/promtail"
+        name: run
+      - hostPath:
+          path: "/var/lib/docker/containers"
+        name: docker
+      - hostPath:
+          path: "/var/log/pods"
+        name: pods
+      - hostPath:
+          path: "/var/log/journal"
+        name: journal
+  updateStrategy:
+    type: RollingUpdate
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: loki-promtail
+spec:
+  allowPrivilegeEscalation: false
+  fsGroup:
+    rule: RunAsAny
+  hostIPC: false
+  hostNetwork: false
+  hostPID: false
+  privileged: false
+  readOnlyRootFilesystem: true
+  requiredDropCapabilities:
+  - ALL
+  runAsUser:
+    rule: RunAsAny
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  volumes:
+  - secret
+  - configMap
+  - hostPath
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: loki-promtail
+  namespace: openshift-logging
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: loki-promtail
+  namespace: openshift-logging
+rules:
+- apiGroups:
+  - extensions
+  resourceNames:
+  - loki-promtail
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: loki-promtail
+  namespace: openshift-logging
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: loki-promtail
+subjects:
+- kind: ServiceAccount
+  name: loki-promtail
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: loki-promtail
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - nodes
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  - configmaps
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - 'config.openshift.io'
+  resources:
+  - 'clusterversions'
+  verbs:
+  - 'get'
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - privileged
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: loki-promtail
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: loki-promtail
+subjects:
+- kind: ServiceAccount
+  name: loki-promtail
+  namespace: openshift-logging
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: lokistack-dev-tenant-logs-role
+rules:
+- apiGroups:
+  - 'loki.openshift.io'
+  resources:
+  - application
+  resourceNames:
+  - logs
+  verbs:
+  - 'get'
+  - 'create'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: lokistack-dev-tenant-logs-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: lokistack-dev-tenant-logs-role
+subjects:
+- kind: User
+  name: "kube:admin"
+- kind: ServiceAccount
+  name: "loki-promtail"
+  namespace: openshift-logging
