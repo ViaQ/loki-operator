@@ -1,7 +1,7 @@
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: logfile-metric-privileged
+  name: log-file-metric-exporter-privileged
 rules:
   - verbs:
       - use
@@ -10,4 +10,4 @@ rules:
     resources:
       - securitycontextconstraints
     resourceNames:
-      - logfile-metric-scc
+      - log-file-metric-exporter-scc

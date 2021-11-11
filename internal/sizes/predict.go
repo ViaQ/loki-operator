@@ -3,14 +3,13 @@ package sizes
 import (
 	"context"
 	"fmt"
-	"os/exec"
-	"strings"
+	"os"
 	"time"
 
 	"github.com/ViaQ/logerr/kverrors"
 
 	"github.com/prometheus/client_golang/api"
-	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	promv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 )
@@ -18,9 +17,9 @@ import (
 var (
 	metricsClient Client
 
-	// durationPredictSecs is the value of time series in seconds from now.
-	// It is passed as second parameter to predict_linear.
-	durationPredictSecs = 1 * 24 * 3600 // 1d = 1 * 24h * 3600s = 86400s
+	// durationDataHour is the default time duration to consider for metric scraping.
+	// It is passed as first parameter to predict_linear.
+	durationDataHour = "1hr"
 	// timeoutClient is the timeout duration for prometheus client.
 	timeoutClient = 10 * time.Second
 
@@ -28,12 +27,10 @@ var (
 	promURL string
 	// promToken is the token to connect to prometheus thanos querier.
 	promToken string
-
-	cmd []byte
 )
 
 type client struct {
-	api     v1.API
+	api     promv1.API
 	timeout time.Duration
 }
 
@@ -65,7 +62,7 @@ func newClient(url, token string) (*client, error) {
 	}
 
 	return &client{
-		api:     v1.NewAPI(pc),
+		api:     promv1.NewAPI(pc),
 		timeout: timeoutClient,
 	}, nil
 }
@@ -101,8 +98,8 @@ func (c *client) executeScalarQuery(query string) (float64, error) {
 func (c *client) LogLoggedBytesReceivedTotal(duration model.Duration) (float64, error) {
 	query := fmt.Sprintf(
 		`sum(predict_linear(log_logged_bytes_total[%s], %d))`,
-		duration,
-		durationPredictSecs,
+		durationDataHour,
+		int(time.Duration(duration).Seconds()),
 	)
 
 	return c.executeScalarQuery(query)
@@ -111,14 +108,8 @@ func (c *client) LogLoggedBytesReceivedTotal(duration model.Duration) (float64, 
 // PredictFor takes the default duration and predicts
 // the amount of logs expected in 1 day
 func PredictFor(duration model.Duration) (logsCollected float64, err error) {
-	// execute the bash script to get the prometheus thanos querier URL and token.
-	cmd, err = exec.Command("./internal/sizes/run.sh").Output()
-	if err != nil {
-		return 0, kverrors.Wrap(err, "Failed to execute the script")
-	}
-
-	promURL = strings.Split(string(cmd), ",")[0]
-	promToken = strings.Split(string(cmd), ",")[1]
+	promURL = os.Getenv("PROMETHEUS_URL")
+	promToken = os.Getenv("PROMETHEUS_TOKEN")
 
 	// Create a client to collect metrics
 	metricsClient, err = newClient(promURL, promToken)

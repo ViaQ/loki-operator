@@ -6,17 +6,19 @@ metadata:
 spec:
   selector:
     matchLabels:
-      name: loki-operator-size-calculator
+      name: storage-size-calculator
   replicas: 1
   template:
     metadata:
       labels:
-        name: loki-operator-size-calculator
+        name: storage-size-calculator
     spec:
       containers:
-      - image: quay.io/sasagarw/loki-operator:v0.1.54
+      - command:
+        - /size-calculator
+        image: quay.io/sasagarw/storage-size-calculator:latest
         imagePullPolicy: IfNotPresent
-        name: storage-size-calculator
+        name: size-calculator
         ports:
         - containerPort: 8080
           name: metrics
@@ -38,24 +40,22 @@ spec:
           - name: storage-size-calculator-ca-bundle
             readOnly: true
             mountPath: /var/run/ca
-        env:
-        - name: PROMETHEUS_URL
-          valueFrom:
-            secretKeyRef:
-              name: promsecret
-              key: prometheus_url
-        - name: PROMETHEUS_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: promsecret
-              key: prometheus_token
+#        env:
+#        - name: PROMETHEUS_URL
+#          valueFrom:
+#            secretKeyRef:
+#              name: promsecret
+#              key: prometheus_url
+#        - name: PROMETHEUS_TOKEN
+#          valueFrom:
+#            secretKeyRef:
+#              name: promsecret
+#              key: prometheus_token
       initContainers:
       - command:
-        - /bin/sh
-        - -c
-        - |
-        image: quay.io/sasagarw/loki-operator:v0.1.54
-        name: storage-size-calculator-init
+        - oc version
+        image: quay.io/sasagarw/storage-size-calculator:latest
+        name: size-calculator-init
         imagePullPolicy: IfNotPresent
       terminationGracePeriodSeconds: 10
       volumes:

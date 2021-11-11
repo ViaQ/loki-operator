@@ -17,4 +17,4 @@ spec:
       scrapeTimeout: 10s
       tlsConfig:
         caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
-        serverName: log-file-metric-exporter-http-service.openshift-logging.svc
+        serverName: log-file-metric-exporter-metrics.openshift-logging.svc

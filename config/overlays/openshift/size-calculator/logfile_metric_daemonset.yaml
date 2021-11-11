@@ -32,47 +32,24 @@ spec:
               protocol: TCP
           volumeMounts:
             - mountPath: /var/run/secrets/serving-cert
-              name: logfile-metrics
+              name: log-file-metric-exporter-metrics
             - mountPath: /var/log
               name: logfile-varlog
-            - name: kube-api-access-kwbqc
-              readOnly: true
-              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           securityContext:
             seLinuxOptions:
               type: spc_t
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
-      serviceAccount: logfile-metric
+      serviceAccount: log-file-metric-exporter
       volumes:
-        - name: logfile-metrics
+        - name: log-file-metric-exporter-metrics
           secret:
             defaultMode: 420
             optional: true
-            secretName: logfile-metrics
+            secretName: log-file-metric-exporter-metrics
         - name: logfile-varlog
           hostPath:
             path: /var/log
-        - name: kube-api-access-kwbqc
-          projected:
-            sources:
-              - serviceAccountToken:
-                  expirationSeconds: 3607
-                  path: token
-              - configMap:
-                  name: kube-root-ca.crt
-                  items:
-                    - key: ca.crt
-                      path: ca.crt
-              - downwardAPI:
-                  items:
-                    - path: namespace
-                      fieldRef:
-                        apiVersion: v1
-                        fieldPath: metadata.namespace
-              - configMap:
-                  name: openshift-service-ca.crt
-                  items:
-                    - key: service-ca.crt
-                      path: service-ca.crt
-            defaultMode: 420
+        - name: storage-size-calculator-ca-bundle
+          configMap:
+            name: storage-size-calculator-ca-bundle

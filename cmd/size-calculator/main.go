@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	// defaultDuration is the default time duration to consider for metric scraping
-	defaultDuration string = "1h"
+	// defaultDuration is the time for which the metric needs to be predicted for.
+	// It is passed as second parameter to predict_linear.
+	defaultDuration string = "24h"
 	// range1xSmall defines the range (in GB)
 	// of t-shirt size 1x.small i.e., 0 <= 1x.small <= 500
 	range1xSmall int = 500
