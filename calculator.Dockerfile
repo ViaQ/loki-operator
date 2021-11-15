@@ -1,4 +1,4 @@
-# Build the manager binary
+# Build the calculator binary
 FROM golang:1.16 as builder
 
 WORKDIR /workspace
@@ -11,12 +11,7 @@ RUN go mod download
 
 # Copy the go source
 COPY cmd/size-calculator/main.go main.go
-COPY api/ api/
 COPY internal/ internal/
-
-#@follow_tag(registry-proxy.engineering.redhat.com/rh-osbs/openshift-ose-cli:v4.7)
-FROM registry-proxy.engineering.redhat.com/rh-osbs/openshift-ose-cli:v4.7.0-202104250659.p0 AS origincli
-COPY --from=origincli /usr/bin/oc /usr/bin
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -a -o size-calculator main.go

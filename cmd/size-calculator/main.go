@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"time"
 
-	lokiv1beta1 "github.com/ViaQ/loki-operator/api/v1beta1"
-
-	"github.com/ViaQ/logerr/log"
 	"github.com/ViaQ/loki-operator/internal/sizes"
 	"github.com/prometheus/common/model"
+
+	"github.com/ViaQ/logerr/log"
 )
 
 const (
@@ -19,6 +19,14 @@ const (
 	// range1xSmall defines the range (in GB)
 	// of t-shirt size 1x.small i.e., 0 <= 1x.small <= 500
 	range1xSmall int = 500
+	// sizeOneXSmall defines the size of a single Loki deployment
+	// with small resources/limits requirements. This size is dedicated for setup **without** the
+	// requirement for single replication factor and auto-compaction.
+	sizeOneXSmall string = "1x.small"
+	// sizeOneXMedium defines the size of a single Loki deployment
+	// with small resources/limits requirements. This size is dedicated for setup **with** the
+	// requirement for single replication factor and auto-compaction.
+	sizeOneXMedium string = "1x.medium"
 )
 
 func init() {
@@ -26,24 +34,30 @@ func init() {
 }
 
 func main() {
-	duration, parseErr := model.ParseDuration(defaultDuration)
-	if parseErr != nil {
-		log.Error(parseErr, "failed to parse duration")
-		os.Exit(1)
-	}
+	log.Info("starting storage size calculator...")
 
-	logsCollected, err := sizes.PredictFor(duration)
-	if err != nil {
-		log.Error(err, "Failed to collect metrics data")
-		os.Exit(1)
-	}
+	for {
+		duration, parseErr := model.ParseDuration(defaultDuration)
+		if parseErr != nil {
+			log.Error(parseErr, "failed to parse duration")
+			os.Exit(1)
+		}
 
-	logsCollectedInGB := int(math.Ceil(logsCollected / math.Pow(1024, 3)))
-	log.Info(fmt.Sprintf("Amount of logs expected in 24 hours is %f Bytes or %dGB", logsCollected, logsCollectedInGB))
+		logsCollected, err := sizes.PredictFor(duration)
+		if err != nil {
+			log.Error(err, "Failed to collect metrics data")
+			os.Exit(1)
+		}
 
-	if logsCollectedInGB <= range1xSmall {
-		log.Info(fmt.Sprintf("Recommended t-shirt size for %dGB is %s", logsCollectedInGB, lokiv1beta1.SizeOneXSmall))
-	} else {
-		log.Info(fmt.Sprintf("Recommended t-shirt size for %dGB is %s", logsCollectedInGB, lokiv1beta1.SizeOneXMedium))
+		logsCollectedInGB := int(math.Ceil(logsCollected / math.Pow(1024, 3)))
+		log.Info(fmt.Sprintf("Amount of logs expected in 24 hours is %f Bytes or %dGB", logsCollected, logsCollectedInGB))
+
+		if logsCollectedInGB <= range1xSmall {
+			log.Info(fmt.Sprintf("Recommended t-shirt size for %dGB is %s", logsCollectedInGB, sizeOneXSmall))
+		} else {
+			log.Info(fmt.Sprintf("Recommended t-shirt size for %dGB is %s", logsCollectedInGB, sizeOneXMedium))
+		}
+
+		time.Sleep(1 * time.Minute)
 	}
 }

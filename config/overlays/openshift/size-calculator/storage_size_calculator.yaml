@@ -2,64 +2,37 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: storage-size-calculator
-  namespace: openshift-logging
 spec:
   selector:
     matchLabels:
-      name: storage-size-calculator
+      name: log-file-metric-exporter
   replicas: 1
   template:
     metadata:
       labels:
-        name: storage-size-calculator
+        name: log-file-metric-exporter
     spec:
       containers:
       - command:
         - /size-calculator
-        image: quay.io/sasagarw/storage-size-calculator:latest
-        imagePullPolicy: IfNotPresent
+        image: quay.io/openshift-logging/storage-size-calculator:latest
+        imagePullPolicy: Always
         name: size-calculator
         ports:
-        - containerPort: 8080
-          name: metrics
+        - containerPort: 2112
+          name: logfile-metrics
         securityContext:
           allowPrivilegeEscalation: false
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-          initialDelaySeconds: 15
-          periodSeconds: 20
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        volumeMounts:
-          - name: storage-size-calculator-ca-bundle
-            readOnly: true
-            mountPath: /var/run/ca
-#        env:
-#        - name: PROMETHEUS_URL
-#          valueFrom:
-#            secretKeyRef:
-#              name: promsecret
-#              key: prometheus_url
-#        - name: PROMETHEUS_TOKEN
-#          valueFrom:
-#            secretKeyRef:
-#              name: promsecret
-#              key: prometheus_token
-      initContainers:
-      - command:
-        - oc version
-        image: quay.io/sasagarw/storage-size-calculator:latest
-        name: size-calculator-init
-        imagePullPolicy: IfNotPresent
+        env:
+        - name: PROMETHEUS_URL
+          valueFrom:
+            secretKeyRef:
+              name: promsecret
+              key: prometheus_url
+        - name: PROMETHEUS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: promsecret
+              key: prometheus_token
       terminationGracePeriodSeconds: 10
-      volumes:
-        - name: storage-size-calculator-ca-bundle
-          configMap:
-            defaultMode: 420
-            name: storage-size-calculator-ca-bundle
+      serviceAccount: log-file-metric-exporter

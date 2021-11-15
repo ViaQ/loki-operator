@@ -7,6 +7,7 @@ resources:
 - logfile_metric_service_account.yaml
 - logfile_metric_service_monitor.yaml
 - storage_size_calculator_config.yaml
+- storage_size_calculator.yaml
 
 # Adds namespace to all resources.
 namespace: openshift-logging

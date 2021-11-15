@@ -19,7 +19,7 @@ var (
 
 	// durationDataHour is the default time duration to consider for metric scraping.
 	// It is passed as first parameter to predict_linear.
-	durationDataHour = "1hr"
+	durationDataHour = "1h"
 	// timeoutClient is the timeout duration for prometheus client.
 	timeoutClient = 10 * time.Second
 
