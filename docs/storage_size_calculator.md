@@ -2,7 +2,7 @@
 
 This document demonstrates how to install storage size calculator for loki on OpenShift.
 
-_Note:_ The storage size calculator works on **OpenShift** only!
+_Note:_ The storage size calculator works out of the box on OpenShift.
 
 ## Introduction
 
