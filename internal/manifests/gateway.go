@@ -49,7 +49,7 @@ func BuildGateway(opts Options) ([]client.Object, error) {
 
 	if opts.Stack.Tenants != nil {
 		mode := opts.Stack.Tenants.Mode
-		if err := configureDeploymentForMode(dpl, mode, opts.Flags, opts.Name); err != nil {
+		if err := configureDeploymentForMode(dpl, mode, opts.Flags); err != nil {
 			return nil, err
 		}
 

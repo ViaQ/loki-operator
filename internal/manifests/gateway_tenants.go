@@ -47,7 +47,7 @@ func ApplyGatewayDefaultOptions(opts *Options) error {
 	return nil
 }
 
-func configureDeploymentForMode(d *appsv1.Deployment, mode lokiv1beta1.ModeType, flags FeatureFlags, stackName string) error {
+func configureDeploymentForMode(d *appsv1.Deployment, mode lokiv1beta1.ModeType, flags FeatureFlags) error {
 	switch mode {
 	case lokiv1beta1.Static, lokiv1beta1.Dynamic:
 		return nil // nothing to configure
@@ -55,7 +55,6 @@ func configureDeploymentForMode(d *appsv1.Deployment, mode lokiv1beta1.ModeType,
 		return openshift.ConfigureGatewayDeployment(
 			d,
 			gatewayContainerName,
-			GatewayName(stackName),
 			tlsMetricsSercetVolume,
 			gateway.LokiGatewayTLSDir,
 			gateway.LokiGatewayCertFile,
