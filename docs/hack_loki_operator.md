@@ -1,6 +1,6 @@
 # Hacking on Loki Operator
 
-Loki Operator is the Kubernetes Operator for [Loki](https://grafana.com/docs/loki/latest/) provided by the Red Hat OpenShift engineering team.
+Loki Operator is the Kubernetes Operator for [Loki](https://grafana.com/docs/loki/latest/).
 
 ## Hacking on Loki Operator using kind
 
@@ -35,10 +35,10 @@ Loki Operator is the Kubernetes Operator for [Loki](https://grafana.com/docs/lok
 * Now create a LokiStack instance to get the various components of Loki up and running:
 
   ```console
-  kubectl apply -f hack/lokistack_gateway_dev.yaml
+  kubectl apply -f hack/lokistack_dev.yaml
   ```
 
-  This will create `distributor`, `compactor`, `ingester`, `querier`, `query-frontend` and `lokistack-gateway` components.
+  This will create `distributor`, `compactor`, `ingester`, `querier` and `query-frontend` components.
 
   Confirm that all components are up and running for `deployments` using:
 
@@ -64,20 +64,6 @@ Loki Operator is the Kubernetes Operator for [Loki](https://grafana.com/docs/lok
   kubectl get statefulsets
   ```
 
-  If you don't want `lokistack-gateway` component [1] then you can skip it by removing the `--with-lokistack-gateway` args from the `controller-manager` deployment:
-
-  ```console
-  kubectl edit deployment/controller-manager
-  ```
-
-  Delete the flag `--with-lokistack-gateway` from the `args` section and save the file. This will update the deployment and now you can create LokiStack instance using:
-
-  ```console
-  kubectl apply -f hack/lokistack_dev.yaml
-  ```
-
-  This will create `distributor`, `compactor`, `ingester`, `querier` and `query-frontend` components only.
-
 ### Cleanup
 
 To cleanup deployments of the operator, you can use:
@@ -87,10 +73,6 @@ make undeploy
 ```
 
 It will undeploy controller from the configured Kubernetes cluster in [~/.kube/config](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/#the-kubeconfig-environment-variable)
-
-### Notes
-
-[1] `lokistack-gateway` is an optional component deployed as part of Loki Operator. It provides secure access to Loki's distributor (i.e. for pushing logs) and query-frontend (i.e. for querying logs) via consulting an OAuth/OIDC endpoint for the request subject.
 
 ## Hacking on Loki Operator on OpenShift
 
@@ -121,7 +103,7 @@ It will undeploy controller from the configured Kubernetes cluster in [~/.kube/c
 
 * Now you need to create a storage secret for the operator. This can be done using:
 
-  ```
+  ```console
   make olm-deploy-example-storage-secret
   ```
 
@@ -132,6 +114,15 @@ It will undeploy controller from the configured Kubernetes cluster in [~/.kube/c
   ```
 
   This secret will be available in openshift-logging namespace. You can check the `hack/deploy-example-secret.sh` file to check the content of the secret.
+
+* Now you need to create a gateway secret [3] for the operator. This can be done using:
+
+  ```code
+  kubectl -n openshift-logging create secret generic test1 \
+    --from-literal=clientID="<CLIENT_ID>" \
+    --from-literal=clientSecret="<CLIENT_SECRET>" \
+    --from-literal=issuerCAPath="<ISSUER_CA_PATH>"
+  ```
 
 * Once the object storage secret is created, you can now create a LokiStack instance to get the various components of Loki up and running:
 
@@ -195,6 +186,12 @@ It will cleanup deployments of the operator bundle, and the operator via OLM on 
 
 [2] If you get multiple images as options, and you are required to select one of them then select `docker.io/library/golang:1.16`
 
+[3] The OIDC configuration expects `clientID`, `clientSecret` and `issuerCAPath` which should be provided via a Kubernetes secret that the LokiStack admin provides upfront.
+
+Each tenant Secret is required to match:
+* `metadata.name` with `TenantsSecretsSpec.Name`.
+* `metadata.namespace` with `LokiStack.metadata.namespace`.
+
 ## Basic Troubleshooting on Hacking on Loki Operator
 
 ### New changes are not detected by Loki Operator
@@ -228,3 +225,23 @@ It is possible that when you use two different clusters - one is kind cluster an
   ```
 
   where `$CONTEXTNAME` is the context name you want to use now from the previous step.
+
+### The Loki Operator giving Missing Secrets / Invalid Secrets error
+
+You have probably forgotten to create the gateway secrets because of which the operator runs in **degraded** condition. Follow the steps mentioned in the step-by-step guide to create the gateway secret first. Once done, you can now create the LokiStack instance.
+
+Verify this by checking the `conditions` field:
+
+```console
+kubectl get lokistack lokistack-dev -o yaml
+```
+
+For OpenShift, the above command would be:
+
+```console
+kubectl -n openshift-logging get lokistack lokistack-dev -o yaml
+```
+
+### The Loki Operator giving Mandatory Configuration / Incompatible Configuration error
+
+This usually happens when the LokiStack CR is wrongly configured for the lokistack-gateway. Please read the [enhancement proposal](https://github.com/openshift/enhancements/blob/master/enhancements/cluster-logging/loki-gateway-configuration.md) to figure out the correct way to configure it.
