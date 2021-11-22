@@ -1,10 +1,9 @@
 package openshift
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"math/rand"
-
-	"github.com/google/uuid"
 )
 
 // Options is the set of internal template options for rendering
@@ -56,9 +55,12 @@ func NewOptions(
 
 	var authn []AuthenticationSpec
 	for _, name := range defaultTenants {
+		s := sha1.New()
+		s.Write([]byte(name))
+		tenantID := s.Sum(nil)
 		authn = append(authn, AuthenticationSpec{
 			TenantName:     name,
-			TenantID:       uuid.New().String(),
+			TenantID:       fmt.Sprintf("%x", tenantID),
 			ServiceAccount: gwName,
 			RedirectURL:    fmt.Sprintf("http://%s/openshift/%s/callback", host, name),
 			CookieSecret:   newCookieSecret(),
