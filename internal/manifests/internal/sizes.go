@@ -8,9 +8,10 @@ import (
 
 // ComponentResources is a map of component->requests/limits
 type ComponentResources struct {
-	Querier   ResourceRequirements
-	Ingester  ResourceRequirements
-	Compactor ResourceRequirements
+	Querier    ResourceRequirements
+	Ingester   ResourceRequirements
+	Compactor  ResourceRequirements
+	WALStorage ResourceRequirements
 	// these two don't need a PVCSize
 	Distributor   corev1.ResourceRequirements
 	QueryFrontend corev1.ResourceRequirements
@@ -66,6 +67,9 @@ var ResourceRequirementsTable = map[lokiv1beta1.LokiStackSizeType]ComponentResou
 				corev1.ResourceMemory: resource.MustParse("256Mi"),
 			},
 		},
+		WALStorage: ResourceRequirements{
+			PVCSize: resource.MustParse("5Gi"),
+		},
 	},
 	lokiv1beta1.SizeOneXSmall: {
 		Querier: ResourceRequirements{
@@ -107,6 +111,9 @@ var ResourceRequirementsTable = map[lokiv1beta1.LokiStackSizeType]ComponentResou
 				corev1.ResourceMemory: resource.MustParse("1Gi"),
 			},
 		},
+		WALStorage: ResourceRequirements{
+			PVCSize: resource.MustParse("150Gi"),
+		},
 	},
 	lokiv1beta1.SizeOneXMedium: {
 		Querier: ResourceRequirements{
@@ -147,6 +154,9 @@ var ResourceRequirementsTable = map[lokiv1beta1.LokiStackSizeType]ComponentResou
 				corev1.ResourceCPU:    resource.MustParse("1"),
 				corev1.ResourceMemory: resource.MustParse("1Gi"),
 			},
+		},
+		WALStorage: ResourceRequirements{
+			PVCSize: resource.MustParse("150Gi"),
 		},
 	},
 }

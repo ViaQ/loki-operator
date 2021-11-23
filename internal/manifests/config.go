@@ -71,6 +71,10 @@ func ConfigOptions(opt Options) config.Options {
 			QuerierCPULimits:      opt.ResourceRequirements.Querier.Requests.Cpu().Value(),
 			QueryFrontendReplicas: opt.Stack.Template.QueryFrontend.Replicas,
 		},
+		WriteAheadLog: config.WriteAheadLog{
+			Directory:           strings.TrimRight(walDirectory, "/"),
+			ReplayMemoryCeiling: opt.ResourceRequirements.Ingester.Requests.Memory().Value(),
+		},
 	}
 }
 

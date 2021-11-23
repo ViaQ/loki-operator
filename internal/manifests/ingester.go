@@ -115,6 +115,11 @@ func NewIngesterStatefulSet(opts Options) *appsv1.StatefulSet {
 						ReadOnly:  false,
 						MountPath: dataDirectory,
 					},
+					{
+						Name:      walVolumeName,
+						ReadOnly:  false,
+						MountPath: walDirectory,
+					},
 				},
 				TerminationMessagePath:   "/dev/termination-log",
 				TerminationMessagePolicy: "File",
@@ -168,6 +173,25 @@ func NewIngesterStatefulSet(opts Options) *appsv1.StatefulSet {
 						Resources: corev1.ResourceRequirements{
 							Requests: map[corev1.ResourceName]resource.Quantity{
 								corev1.ResourceStorage: opts.ResourceRequirements.Ingester.PVCSize,
+							},
+						},
+						StorageClassName: pointer.StringPtr(opts.Stack.StorageClassName),
+						VolumeMode:       &volumeFileSystemMode,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: l,
+						Name:   walVolumeName,
+					},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						AccessModes: []corev1.PersistentVolumeAccessMode{
+							// TODO: should we verify that this is possible with the given storage class first?
+							corev1.ReadWriteOnce,
+						},
+						Resources: corev1.ResourceRequirements{
+							Requests: map[corev1.ResourceName]resource.Quantity{
+								corev1.ResourceStorage: opts.ResourceRequirements.WALStorage.PVCSize,
 							},
 						},
 						StorageClassName: pointer.StringPtr(opts.Stack.StorageClassName),
