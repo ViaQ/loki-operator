@@ -16,6 +16,7 @@ type Options struct {
 	FrontendWorker   Address
 	GossipRing       Address
 	Querier          Address
+	IndexGateway     Address
 	StorageDirectory string
 	ObjectStorage    ObjectStorage
 	QueryParallelism Parallelism

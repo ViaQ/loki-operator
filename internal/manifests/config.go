@@ -59,6 +59,10 @@ func ConfigOptions(opt Options) config.Options {
 			FQDN: fqdn(NewQuerierHTTPService(opt).GetName(), opt.Namespace),
 			Port: httpPort,
 		},
+		IndexGateway: config.Address{
+			FQDN: fqdn(NewIndexGatewayGRPCService(opt).GetName(), opt.Namespace),
+			Port: grpcPort,
+		},
 		StorageDirectory: strings.TrimRight(dataDirectory, "/"),
 		ObjectStorage: config.ObjectStorage{
 			Endpoint:        opt.ObjectStorage.Endpoint,
@@ -72,8 +76,8 @@ func ConfigOptions(opt Options) config.Options {
 			QueryFrontendReplicas: opt.Stack.Template.QueryFrontend.Replicas,
 		},
 		WriteAheadLog: config.WriteAheadLog{
-			Directory:           strings.TrimRight(walDirectory, "/"),
-			ReplayMemoryCeiling: opt.ResourceRequirements.Ingester.Requests.Memory().Value(),
+			Directory:             strings.TrimRight(walDirectory, "/"),
+			IngesterMemoryRequest: opt.ResourceRequirements.Ingester.Requests.Memory().Value(),
 		},
 	}
 }

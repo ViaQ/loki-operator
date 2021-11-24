@@ -49,7 +49,11 @@ ingester:
       heartbeat_timeout: 1m
       kvstore:
         store: memberlist
-  max_transfer_retries: 60
+  max_transfer_retries: 0
+  wal:
+      enabled: true
+      dir: /tmp/wal
+      replay_memory_ceiling: 5000
 ingester_client:
   grpc_client_config:
     max_recv_msg_size: 67108864
@@ -82,11 +86,13 @@ limits_config:
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 12000h
-  max_query_parallelism: 16
+  max_query_parallelism: 32
   max_query_series: 500
   cardinality_limit: 100000
   max_streams_matchers_per_query: 1000
   max_cache_freshness_per_query: 10m
+  per_stream_rate_limit: 3000000
+  per_stream_rate_limit_burst: 15000000
 memberlist:
   abort_if_cluster_join_fails: true
   bind_port: 7946
@@ -135,6 +141,8 @@ storage_config:
     cache_ttl: 24h
     resync_interval: 5m
     shared_store: s3
+	index_gateway_client:
+		server_address: dns:///loki-index-gateway-grpc-lokistack-dev.default.svc.cluster.local:9095
   aws:
     s3: http://test.default.svc.cluster.local.:9000
     bucketnames: loki
@@ -162,6 +170,8 @@ overrides:
 						MaxLabelNamesPerSeries:    30,
 						MaxGlobalStreamsPerTenant: 0,
 						MaxLineSize:               256000,
+						PerStreamRateLimit:        5000000,
+						PerStreamRateLimitBurst:   10000000,
 					},
 					QueryLimits: &lokiv1beta1.QueryLimitSpec{
 						MaxEntriesLimitPerQuery: 5000,
@@ -185,6 +195,10 @@ overrides:
 			FQDN: "loki-querier-http-lokistack-dev.default.svc.cluster.local",
 			Port: 3100,
 		},
+		IndexGateway: Address{
+			FQDN: "loki-index-gateway-grpc-lokistack-dev.default.svc.cluster.local",
+			Port: 9095,
+		},
 		StorageDirectory: "/tmp/loki",
 		ObjectStorage: ObjectStorage{
 			Endpoint:        "http://test.default.svc.cluster.local.:9000",
@@ -196,6 +210,10 @@ overrides:
 		QueryParallelism: Parallelism{
 			QuerierCPULimits:      2,
 			QueryFrontendReplicas: 2,
+		},
+		WriteAheadLog: WriteAheadLog{
+			Directory:             "/tmp/wal",
+			IngesterMemoryRequest: 5000,
 		},
 	}
 	cfg, rCfg, err := Build(opts)
@@ -279,11 +297,13 @@ limits_config:
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 12000h
-  max_query_parallelism: 16
+  max_query_parallelism: 32
   max_query_series: 500
   cardinality_limit: 100000
   max_streams_matchers_per_query: 1000
   max_cache_freshness_per_query: 10m
+  per_stream_rate_limit: 3000000
+  per_stream_rate_limit_burst: 15000000
 memberlist:
   abort_if_cluster_join_fails: true
   bind_port: 7946
@@ -332,6 +352,8 @@ storage_config:
     cache_ttl: 24h
     resync_interval: 5m
     shared_store: s3
+	index_gateway_client:
+		server_address: dns:///loki-index-gateway-grpc-lokistack-dev.default.svc.cluster.local:9095
   aws:
     s3: http://test.default.svc.cluster.local.:9000
     bucketnames: loki
@@ -364,6 +386,8 @@ overrides:
 						MaxLabelNamesPerSeries:    30,
 						MaxGlobalStreamsPerTenant: 0,
 						MaxLineSize:               256000,
+						PerStreamRateLimit:        5000000,
+						PerStreamRateLimitBurst:   10000000,
 					},
 					QueryLimits: &lokiv1beta1.QueryLimitSpec{
 						MaxEntriesLimitPerQuery: 5000,
@@ -399,6 +423,10 @@ overrides:
 			FQDN: "loki-querier-http-lokistack-dev.default.svc.cluster.local",
 			Port: 3100,
 		},
+		IndexGateway: Address{
+			FQDN: "loki-index-gateway-grpc-lokistack-dev.default.svc.cluster.local",
+			Port: 9095,
+		},
 		StorageDirectory: "/tmp/loki",
 		ObjectStorage: ObjectStorage{
 			Endpoint:        "http://test.default.svc.cluster.local.:9000",
@@ -410,6 +438,10 @@ overrides:
 		QueryParallelism: Parallelism{
 			QuerierCPULimits:      2,
 			QueryFrontendReplicas: 2,
+		},
+		WriteAheadLog: WriteAheadLog{
+			Directory:             "/tmp/wal",
+			IngesterMemoryRequest: 5000,
 		},
 	}
 	cfg, rCfg, err := Build(opts)
@@ -432,6 +464,8 @@ func TestBuild_ConfigAndRuntimeConfig_CreateLokiConfigFailed(t *testing.T) {
 						MaxLabelNamesPerSeries:    30,
 						MaxGlobalStreamsPerTenant: 0,
 						MaxLineSize:               256000,
+						PerStreamRateLimit:        5000000,
+						PerStreamRateLimitBurst:   10000000,
 					},
 					// making it nil so that the template is not generated and error is returned
 					QueryLimits: nil,
@@ -452,6 +486,10 @@ func TestBuild_ConfigAndRuntimeConfig_CreateLokiConfigFailed(t *testing.T) {
 			FQDN: "loki-querier-http-lokistack-dev.default.svc.cluster.local",
 			Port: 3100,
 		},
+		IndexGateway: Address{
+			FQDN: "loki-index-gateway-grpc-lokistack-dev.default.svc.cluster.local",
+			Port: 9095,
+		},
 		StorageDirectory: "/tmp/loki",
 		ObjectStorage: ObjectStorage{
 			Endpoint:        "http://test.default.svc.cluster.local.:9000",
@@ -463,6 +501,10 @@ func TestBuild_ConfigAndRuntimeConfig_CreateLokiConfigFailed(t *testing.T) {
 		QueryParallelism: Parallelism{
 			QuerierCPULimits:      2,
 			QueryFrontendReplicas: 2,
+		},
+		WriteAheadLog: WriteAheadLog{
+			Directory:             "/tmp/wal",
+			IngesterMemoryRequest: 5000,
 		},
 	}
 	cfg, rCfg, err := Build(opts)

@@ -7,6 +7,7 @@ import (
 	"github.com/ViaQ/loki-operator/internal/manifests/internal/config"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -14,24 +15,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// BuildQuerier returns a list of k8s objects for Loki Querier
-func BuildQuerier(opts Options) ([]client.Object, error) {
-	deployment := NewQuerierDeployment(opts)
+// BuildIndexGateway returns a list of k8s objects for Loki IndexGateway
+func BuildIndexGateway(opts Options) ([]client.Object, error) {
+	statefulSet := NewIndexGatewayStatefulSet(opts)
 	if opts.Flags.EnableTLSServiceMonitorConfig {
-		if err := configureQuerierServiceMonitorPKI(deployment, opts.Name); err != nil {
+		if err := configureIndexGatewayServiceMonitorPKI(statefulSet, opts.Name); err != nil {
 			return nil, err
 		}
 	}
 
 	return []client.Object{
-		deployment,
-		NewQuerierGRPCService(opts),
-		NewQuerierHTTPService(opts),
+		statefulSet,
+		NewIndexGatewayGRPCService(opts),
+		NewIndexGatewayHTTPService(opts),
 	}, nil
 }
 
-// NewQuerierDeployment creates a deployment object for a querier
-func NewQuerierDeployment(opts Options) *appsv1.Deployment {
+// NewIndexGatewayStatefulSet creates a statefulset object for an index-gateway
+func NewIndexGatewayStatefulSet(opts Options) *appsv1.StatefulSet {
 	podSpec := corev1.PodSpec{
 		Volumes: []corev1.Volume{
 			{
@@ -49,13 +50,13 @@ func NewQuerierDeployment(opts Options) *appsv1.Deployment {
 		Containers: []corev1.Container{
 			{
 				Image: opts.Image,
-				Name:  "loki-querier",
+				Name:  "loki-index-gateway",
 				Resources: corev1.ResourceRequirements{
-					Limits:   opts.ResourceRequirements.Querier.Limits,
-					Requests: opts.ResourceRequirements.Querier.Requests,
+					Limits:   opts.ResourceRequirements.IndexGateway.Limits,
+					Requests: opts.ResourceRequirements.IndexGateway.Requests,
 				},
 				Args: []string{
-					"-target=querier",
+					"-target=index-gateway",
 					fmt.Sprintf("-config.file=%s", path.Join(config.LokiConfigMountDir, config.LokiConfigFileName)),
 					fmt.Sprintf("-runtime-config.file=%s", path.Join(config.LokiConfigMountDir, config.LokiRuntimeConfigFileName)),
 				},
@@ -97,17 +98,17 @@ func NewQuerierDeployment(opts Options) *appsv1.Deployment {
 						ContainerPort: grpcPort,
 						Protocol:      protocolTCP,
 					},
-					{
-						Name:          lokiGossipPortName,
-						ContainerPort: gossipPort,
-						Protocol:      protocolTCP,
-					},
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      configVolumeName,
 						ReadOnly:  false,
 						MountPath: config.LokiConfigMountDir,
+					},
+					{
+						Name:      storageVolumeName,
+						ReadOnly:  false,
+						MountPath: dataDirectory,
 					},
 				},
 				TerminationMessagePath:   "/dev/termination-log",
@@ -117,46 +118,66 @@ func NewQuerierDeployment(opts Options) *appsv1.Deployment {
 		},
 	}
 
-	if opts.Stack.Template != nil && opts.Stack.Template.Querier != nil {
-		podSpec.Tolerations = opts.Stack.Template.Querier.Tolerations
-		podSpec.NodeSelector = opts.Stack.Template.Querier.NodeSelector
+	if opts.Stack.Template != nil && opts.Stack.Template.IndexGateway != nil {
+		podSpec.Tolerations = opts.Stack.Template.IndexGateway.Tolerations
+		podSpec.NodeSelector = opts.Stack.Template.IndexGateway.NodeSelector
 	}
 
-	l := ComponentLabels(LabelQuerierComponent, opts.Name)
+	l := ComponentLabels(LabelIndexGatewayComponent, opts.Name)
 	a := commonAnnotations(opts.ConfigSHA1)
 
-	return &appsv1.Deployment{
+	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "Deployment",
+			Kind:       "StatefulSet",
 			APIVersion: appsv1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   QuerierName(opts.Name),
+			Name:   IndexGatewayName(opts.Name),
 			Labels: l,
 		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: pointer.Int32Ptr(opts.Stack.Template.Querier.Replicas),
+		Spec: appsv1.StatefulSetSpec{
+			PodManagementPolicy:  appsv1.OrderedReadyPodManagement,
+			RevisionHistoryLimit: pointer.Int32Ptr(10),
+			Replicas:             pointer.Int32Ptr(opts.Stack.Template.IndexGateway.Replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels.Merge(l, GossipLabels()),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:        fmt.Sprintf("loki-querier-%s", opts.Name),
+					Name:        fmt.Sprintf("loki-index-gateway-%s", opts.Name),
 					Labels:      labels.Merge(l, GossipLabels()),
 					Annotations: a,
 				},
 				Spec: podSpec,
 			},
-			Strategy: appsv1.DeploymentStrategy{
-				Type: appsv1.RollingUpdateDeploymentStrategyType,
+			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: l,
+						Name:   storageVolumeName,
+					},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						AccessModes: []corev1.PersistentVolumeAccessMode{
+							// TODO: should we verify that this is possible with the given storage class first?
+							corev1.ReadWriteOnce,
+						},
+						Resources: corev1.ResourceRequirements{
+							Requests: map[corev1.ResourceName]resource.Quantity{
+								corev1.ResourceStorage: opts.ResourceRequirements.IndexGateway.PVCSize,
+							},
+						},
+						StorageClassName: pointer.StringPtr(opts.Stack.StorageClassName),
+						VolumeMode:       &volumeFileSystemMode,
+					},
+				},
 			},
 		},
 	}
 }
 
-// NewQuerierGRPCService creates a k8s service for the querier GRPC endpoint
-func NewQuerierGRPCService(opts Options) *corev1.Service {
-	l := ComponentLabels(LabelQuerierComponent, opts.Name)
+// NewIndexGatewayGRPCService creates a k8s service for the index-gateway GRPC endpoint
+func NewIndexGatewayGRPCService(opts Options) *corev1.Service {
+	l := ComponentLabels(LabelIndexGatewayComponent, opts.Name)
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -164,7 +185,7 @@ func NewQuerierGRPCService(opts Options) *corev1.Service {
 			APIVersion: corev1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   serviceNameQuerierGRPC(opts.Name),
+			Name:   serviceNameIndexGatewayGRPC(opts.Name),
 			Labels: l,
 		},
 		Spec: corev1.ServiceSpec{
@@ -182,10 +203,10 @@ func NewQuerierGRPCService(opts Options) *corev1.Service {
 	}
 }
 
-// NewQuerierHTTPService creates a k8s service for the querier HTTP endpoint
-func NewQuerierHTTPService(opts Options) *corev1.Service {
-	serviceName := serviceNameQuerierHTTP(opts.Name)
-	l := ComponentLabels(LabelQuerierComponent, opts.Name)
+// NewIndexGatewayHTTPService creates a k8s service for the index-gateway HTTP endpoint
+func NewIndexGatewayHTTPService(opts Options) *corev1.Service {
+	serviceName := serviceNameIndexGatewayHTTP(opts.Name)
+	l := ComponentLabels(LabelIndexGatewayComponent, opts.Name)
 	a := serviceAnnotations(serviceName, opts.Flags.EnableCertificateSigningService)
 
 	return &corev1.Service{
@@ -212,7 +233,7 @@ func NewQuerierHTTPService(opts Options) *corev1.Service {
 	}
 }
 
-func configureQuerierServiceMonitorPKI(deployment *appsv1.Deployment, stackName string) error {
-	serviceName := serviceNameQuerierHTTP(stackName)
-	return configureServiceMonitorPKI(&deployment.Spec.Template.Spec, serviceName)
+func configureIndexGatewayServiceMonitorPKI(statefulSet *appsv1.StatefulSet, stackName string) error {
+	serviceName := serviceNameIndexGatewayHTTP(stackName)
+	return configureServiceMonitorPKI(&statefulSet.Spec.Template.Spec, serviceName)
 }

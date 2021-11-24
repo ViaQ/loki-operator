@@ -128,6 +128,8 @@ storage_config:
     cache_ttl: 24h
     resync_interval: 5m
     shared_store: s3
+    index_gateway_client:
+        server_address: dns:///{{ .IndexGateway.FQDN }}:{{ .IndexGateway.Port }}
   aws:
     s3: {{ .ObjectStorage.Endpoint }}
     bucketnames: {{ .ObjectStorage.Buckets }}
