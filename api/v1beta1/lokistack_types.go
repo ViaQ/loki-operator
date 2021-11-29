@@ -423,12 +423,28 @@ type IngestionLimitSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:com.tectonic.ui:number",displayName="Max Global Streams per  Tenant"
 	MaxGlobalStreamsPerTenant int32 `json:"maxGlobalStreamsPerTenant,omitempty"`
 
-	// MaxLineSize defines the aximum line size on ingestion path. Units in Bytes.
+	// MaxLineSize defines the maximum line size on ingestion path. Units in Bytes.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:com.tectonic.ui:number",displayName="Max Line Size"
 	MaxLineSize int32 `json:"maxLineSize,omitempty"`
+
+	// PerStreamRateLimit defines the maximum byte rate per second for each stream. Units in Bytes.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:com.tectonic.ui:number",displayName="Per Stream Rate Limit"
+	PerStreamRateLimit int32 `json:"perStreamRateLimit,omitempty"`
+
+	// PerStreamRateLimitBurst defines the maximum burst bytes per stream.
+	// This value sets the upper limit for the stream rate limit. When exceeding
+	// this, the stream is limited.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:com.tectonic.ui:number",displayName="PerStreamRateLimitBurst"
+	PerStreamRateLimitBurst int32 `json:"perStreamRateLimitBurst,omitempty"`
 }
 
 // LimitsTemplateSpec defines the limits  applied at ingestion or query path.
