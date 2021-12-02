@@ -143,7 +143,7 @@ spec:
       - description: PerStreamRateLimitBurst defines the maximum burst bytes per stream.
           This value sets the upper limit for the stream rate limit. When exceeding
           this, the stream is limited.
-        displayName: PerStreamRateLimitBurst
+        displayName: Per Stream Rate Limit Burst
         path: limits.global.ingestion.perStreamRateLimitBurst
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
@@ -219,7 +219,7 @@ spec:
       - description: PerStreamRateLimitBurst defines the maximum burst bytes per stream.
           This value sets the upper limit for the stream rate limit. When exceeding
           this, the stream is limited.
-        displayName: PerStreamRateLimitBurst
+        displayName: Per Stream Rate Limit Burst
         path: limits.tenants.ingestion.perStreamRateLimitBurst
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
@@ -306,7 +306,7 @@ spec:
         path: template.gateway.replicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: IndexGateway defines the lokistack index gateway component spec.
+      - description: IndexGateway defines the index gateway component spec.
         displayName: Index Gateway pods
         path: template.indexGateway
       - description: Replicas defines the number of replica pods of the component.

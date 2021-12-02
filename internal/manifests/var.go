@@ -126,7 +126,7 @@ func QueryFrontendName(stackName string) string {
 	return fmt.Sprintf("loki-query-frontend-%s", stackName)
 }
 
-// IndexGatewayName is the name of the lokiStack-index-gateway statefulset
+// IndexGatewayName is the name of the index-gateway statefulset
 func IndexGatewayName(stackName string) string {
 	return fmt.Sprintf("loki-index-gateway-%s", stackName)
 }

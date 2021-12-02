@@ -433,8 +433,8 @@ spec:
                         type: array
                     type: object
                   indexGateway:
-                    description: IndexGateway defines the lokistack index gateway
-                      component spec.
+                    description: IndexGateway defines the index gateway component
+                      spec.
                     properties:
                       nodeSelector:
                         additionalProperties:

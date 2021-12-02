@@ -315,7 +315,7 @@ type LokiTemplateSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Gateway pods"
 	Gateway *LokiComponentSpec `json:"gateway,omitempty"`
 
-	// IndexGateway defines the lokistack index gateway component spec.
+	// IndexGateway defines the index gateway component spec.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
@@ -443,7 +443,7 @@ type IngestionLimitSpec struct {
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:com.tectonic.ui:number",displayName="PerStreamRateLimitBurst"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:com.tectonic.ui:number",displayName="Per Stream Rate Limit Burst"
 	PerStreamRateLimitBurst int32 `json:"perStreamRateLimitBurst,omitempty"`
 }
 
