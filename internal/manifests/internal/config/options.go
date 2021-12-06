@@ -60,9 +60,9 @@ func (p Parallelism) Value() int32 {
 	return int32(math.Floor(float64(p.QuerierCPULimits) / float64(p.QueryFrontendReplicas)))
 }
 
-// ReplayMemoryCeiling calculates 75% of the ingester memory
+// ReplayMemoryCeiling calculates 50% of the ingester memory
 // for the ingester to use for the write-ahead-log capbability.
 func (w WriteAheadLog) ReplayMemoryCeiling() string {
-	value := int64(math.Ceil(float64(w.IngesterMemoryRequest) * float64(0.75)))
+	value := int64(math.Ceil(float64(w.IngesterMemoryRequest) * float64(0.5)))
 	return fmt.Sprintf("%d", value)
 }

@@ -50,7 +50,7 @@ ingester:
   wal:
     enabled: true
     dir: /tmp/wal
-    replay_memory_ceiling: 3750
+    replay_memory_ceiling: 2500
 ingester_client:
   grpc_client_config:
     max_recv_msg_size: 67108864
@@ -266,7 +266,7 @@ ingester:
   wal:
     enabled: true
     dir: /tmp/wal
-    replay_memory_ceiling: 3750
+    replay_memory_ceiling: 2500
 ingester_client:
   grpc_client_config:
     max_recv_msg_size: 67108864
