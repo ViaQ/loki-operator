@@ -59,8 +59,6 @@ func randomConfigOptions() manifests.Options {
 						MaxLabelNamesPerSeries:    rand.Int31(),
 						MaxGlobalStreamsPerTenant: rand.Int31(),
 						MaxLineSize:               rand.Int31(),
-						PerStreamRateLimit:        rand.Int31(),
-						PerStreamRateLimitBurst:   rand.Int31(),
 					},
 					QueryLimits: &lokiv1beta1.QueryLimitSpec{
 						MaxEntriesLimitPerQuery: rand.Int31(),
@@ -78,8 +76,6 @@ func randomConfigOptions() manifests.Options {
 							MaxLabelNamesPerSeries:    rand.Int31(),
 							MaxGlobalStreamsPerTenant: rand.Int31(),
 							MaxLineSize:               rand.Int31(),
-							PerStreamRateLimit:        rand.Int31(),
-							PerStreamRateLimitBurst:   rand.Int31(),
 						},
 						QueryLimits: &lokiv1beta1.QueryLimitSpec{
 							MaxEntriesLimitPerQuery: rand.Int31(),

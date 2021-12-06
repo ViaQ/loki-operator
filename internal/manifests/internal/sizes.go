@@ -190,14 +190,12 @@ var StackSizeTable = map[lokiv1beta1.LokiStackSizeType]lokiv1beta1.LokiStackSpec
 			Global: &lokiv1beta1.LimitsTemplateSpec{
 				IngestionLimits: &lokiv1beta1.IngestionLimitSpec{
 					// Defaults from Loki docs
-					IngestionRate:           4,
-					IngestionBurstSize:      6,
-					MaxLabelNameLength:      1024,
-					MaxLabelValueLength:     2048,
-					MaxLabelNamesPerSeries:  30,
-					MaxLineSize:             256000,
-					PerStreamRateLimit:      3000000,
-					PerStreamRateLimitBurst: 15000000,
+					IngestionRate:          4,
+					IngestionBurstSize:     6,
+					MaxLabelNameLength:     1024,
+					MaxLabelValueLength:    2048,
+					MaxLabelNamesPerSeries: 30,
+					MaxLineSize:            256000,
 				},
 				QueryLimits: &lokiv1beta1.QueryLimitSpec{
 					// Defaults from Loki docs
@@ -243,12 +241,10 @@ var StackSizeTable = map[lokiv1beta1.LokiStackSizeType]lokiv1beta1.LokiStackSpec
 					IngestionBurstSize:        20,
 					MaxGlobalStreamsPerTenant: 10000,
 					// Defaults from Loki docs
-					MaxLabelNameLength:      1024,
-					MaxLabelValueLength:     2048,
-					MaxLabelNamesPerSeries:  30,
-					MaxLineSize:             256000,
-					PerStreamRateLimit:      3000000,
-					PerStreamRateLimitBurst: 15000000,
+					MaxLabelNameLength:     1024,
+					MaxLabelValueLength:    2048,
+					MaxLabelNamesPerSeries: 30,
+					MaxLineSize:            256000,
 				},
 				QueryLimits: &lokiv1beta1.QueryLimitSpec{
 					// Defaults from Loki docs
@@ -278,7 +274,7 @@ var StackSizeTable = map[lokiv1beta1.LokiStackSizeType]lokiv1beta1.LokiStackSpec
 				Replicas: 2,
 			},
 			IndexGateway: &lokiv1beta1.LokiComponentSpec{
-				Replicas: 1,
+				Replicas: 2,
 			},
 		},
 	},
@@ -294,12 +290,10 @@ var StackSizeTable = map[lokiv1beta1.LokiStackSizeType]lokiv1beta1.LokiStackSpec
 					IngestionBurstSize:        20,
 					MaxGlobalStreamsPerTenant: 25000,
 					// Defaults from Loki docs
-					MaxLabelNameLength:      1024,
-					MaxLabelValueLength:     2048,
-					MaxLabelNamesPerSeries:  30,
-					MaxLineSize:             256000,
-					PerStreamRateLimit:      3000000,
-					PerStreamRateLimitBurst: 15000000,
+					MaxLabelNameLength:     1024,
+					MaxLabelValueLength:    2048,
+					MaxLabelNamesPerSeries: 30,
+					MaxLineSize:            256000,
 				},
 				QueryLimits: &lokiv1beta1.QueryLimitSpec{
 					// Defaults from Loki docs
@@ -329,7 +323,7 @@ var StackSizeTable = map[lokiv1beta1.LokiStackSizeType]lokiv1beta1.LokiStackSpec
 				Replicas: 2,
 			},
 			IndexGateway: &lokiv1beta1.LokiComponentSpec{
-				Replicas: 1,
+				Replicas: 2,
 			},
 		},
 	},

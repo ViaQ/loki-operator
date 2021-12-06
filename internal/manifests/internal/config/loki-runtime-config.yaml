@@ -24,12 +24,6 @@ overrides:
     {{ if $l.MaxGlobalStreamsPerTenant }}
     max_global_streams_per_user: {{ $l.MaxGlobalStreamsPerTenant }}
     {{- end -}}
-    {{ if $l.PerStreamRateLimit }}
-    per_stream_rate_limit: {{ $l.PerStreamRateLimit }}
-    {{- end -}}
-    {{ if $l.PerStreamRateLimitBurst }}
-    per_stream_rate_limit_burst: {{ $l.PerStreamRateLimitBurst }}
-    {{- end -}}
   {{- end -}}
   {{- if $l := $spec.QueryLimits -}}
     {{ if $l.MaxEntriesLimitPerQuery }}

@@ -77,8 +77,8 @@ limits_config:
   cardinality_limit: 100000
   max_streams_matchers_per_query: 1000
   max_cache_freshness_per_query: 10m
-  per_stream_rate_limit: {{ .Stack.Limits.Global.IngestionLimits.PerStreamRateLimit }}
-  per_stream_rate_limit_burst: {{ .Stack.Limits.Global.IngestionLimits.PerStreamRateLimitBurst }}
+  per_stream_rate_limit: 3MB
+  per_stream_rate_limit_burst: 15MB
 memberlist:
   abort_if_cluster_join_fails: true
   bind_port: {{ .GossipRing.Port }}

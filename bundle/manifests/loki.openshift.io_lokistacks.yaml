@@ -91,18 +91,6 @@ spec:
                               on ingestion path. Units in Bytes.
                             format: int32
                             type: integer
-                          perStreamRateLimit:
-                            description: PerStreamRateLimit defines the maximum byte
-                              rate per second for each stream. Units in Bytes.
-                            format: int32
-                            type: integer
-                          perStreamRateLimitBurst:
-                            description: PerStreamRateLimitBurst defines the maximum
-                              burst bytes per stream. This value sets the upper limit
-                              for the stream rate limit. When exceeding this, the
-                              stream is limited.
-                            format: int32
-                            type: integer
                         type: object
                       queries:
                         description: QueryLimits defines the limit applied on querying
@@ -171,18 +159,6 @@ spec:
                             maxLineSize:
                               description: MaxLineSize defines the maximum line size
                                 on ingestion path. Units in Bytes.
-                              format: int32
-                              type: integer
-                            perStreamRateLimit:
-                              description: PerStreamRateLimit defines the maximum
-                                byte rate per second for each stream. Units in Bytes.
-                              format: int32
-                              type: integer
-                            perStreamRateLimitBurst:
-                              description: PerStreamRateLimitBurst defines the maximum
-                                burst bytes per stream. This value sets the upper
-                                limit for the stream rate limit. When exceeding this,
-                                the stream is limited.
                               format: int32
                               type: integer
                           type: object

@@ -88,8 +88,8 @@ limits_config:
   cardinality_limit: 100000
   max_streams_matchers_per_query: 1000
   max_cache_freshness_per_query: 10m
-  per_stream_rate_limit: 5000000
-  per_stream_rate_limit_burst: 10000000
+  per_stream_rate_limit: 3MB
+  per_stream_rate_limit_burst: 15MB
 memberlist:
   abort_if_cluster_join_fails: true
   bind_port: 7946
@@ -173,8 +173,6 @@ overrides:
 						MaxLabelNamesPerSeries:    30,
 						MaxGlobalStreamsPerTenant: 0,
 						MaxLineSize:               256000,
-						PerStreamRateLimit:        5000000,
-						PerStreamRateLimitBurst:   10000000,
 					},
 					QueryLimits: &lokiv1beta1.QueryLimitSpec{
 						MaxEntriesLimitPerQuery: 5000,
@@ -306,8 +304,8 @@ limits_config:
   cardinality_limit: 100000
   max_streams_matchers_per_query: 1000
   max_cache_freshness_per_query: 10m
-  per_stream_rate_limit: 5000000
-  per_stream_rate_limit_burst: 10000000
+  per_stream_rate_limit: 3MB
+  per_stream_rate_limit_burst: 15MB
 memberlist:
   abort_if_cluster_join_fails: true
   bind_port: 7946
@@ -396,8 +394,6 @@ overrides:
 						MaxLabelNamesPerSeries:    30,
 						MaxGlobalStreamsPerTenant: 0,
 						MaxLineSize:               256000,
-						PerStreamRateLimit:        5000000,
-						PerStreamRateLimitBurst:   10000000,
 					},
 					QueryLimits: &lokiv1beta1.QueryLimitSpec{
 						MaxEntriesLimitPerQuery: 5000,
@@ -474,8 +470,6 @@ func TestBuild_ConfigAndRuntimeConfig_CreateLokiConfigFailed(t *testing.T) {
 						MaxLabelNamesPerSeries:    30,
 						MaxGlobalStreamsPerTenant: 0,
 						MaxLineSize:               256000,
-						PerStreamRateLimit:        5000000,
-						PerStreamRateLimitBurst:   10000000,
 					},
 					// making it nil so that the template is not generated and error is returned
 					QueryLimits: nil,

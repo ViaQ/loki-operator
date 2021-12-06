@@ -134,19 +134,6 @@ spec:
         path: limits.global.ingestion.maxLineSize
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
-      - description: PerStreamRateLimit defines the maximum byte rate per second for
-          each stream. Units in Bytes.
-        displayName: Per Stream Rate Limit
-        path: limits.global.ingestion.perStreamRateLimit
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:number
-      - description: PerStreamRateLimitBurst defines the maximum burst bytes per stream.
-          This value sets the upper limit for the stream rate limit. When exceeding
-          this, the stream is limited.
-        displayName: Per Stream Rate Limit Burst
-        path: limits.global.ingestion.perStreamRateLimitBurst
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:number
       - description: MaxChunksPerQuery defines the maximum number of chunks that can
           be fetched by a single query.
         displayName: Max Chunk per Query
@@ -208,19 +195,6 @@ spec:
           Units in Bytes.
         displayName: Max Line Size
         path: limits.tenants.ingestion.maxLineSize
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:number
-      - description: PerStreamRateLimit defines the maximum byte rate per second for
-          each stream. Units in Bytes.
-        displayName: Per Stream Rate Limit
-        path: limits.tenants.ingestion.perStreamRateLimit
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:number
-      - description: PerStreamRateLimitBurst defines the maximum burst bytes per stream.
-          This value sets the upper limit for the stream rate limit. When exceeding
-          this, the stream is limited.
-        displayName: Per Stream Rate Limit Burst
-        path: limits.tenants.ingestion.perStreamRateLimitBurst
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:number
       - description: MaxChunksPerQuery defines the maximum number of chunks that can
