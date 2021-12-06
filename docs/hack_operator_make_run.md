@@ -24,7 +24,7 @@ _Note:_ This is helpful when you don't want to deploy the Loki Operator image ev
   This will create a custom resource definition with the name `lokistacks.loki.openshift.io` which can be verified using:
 
   ```console
-  kubectl get crd
+  kubectl get crd lokistacks.loki.openshift.io
   ```
 
 * Create a minio deployment in the cluster using:
@@ -41,13 +41,13 @@ _Note:_ This is helpful when you don't want to deploy the Loki Operator image ev
   kubectl apply -f hack/lokistack_dev.yaml
   ```
 
-* Now run the operator locally in your machine:
+* Now run the operator locally on your machine:
 
   ```console
   make run
   ```
 
-  This will start the loki operator locally and also creates `distributor`, `compactor`, `ingester`, `querier` and `query-frontend` components.
+  This will start the loki operator locally, recognize the `LokiStack` CRD instance and also creates `distributor`, `compactor`, `ingester`, `querier` and `query-frontend` components.
 
   Confirm that all components are up and running for `deployments` using:
 
@@ -118,7 +118,7 @@ _Note:_ This is helpful when you don't want to deploy the Loki Operator image ev
   This will create a custom resource definition with the name `lokistacks.loki.openshift.io` which can be verified using:
 
   ```console
-  kubectl get crd
+  kubectl get crd lokistacks.loki.openshift.io
   ```
   
 * Create the `openshift-logging` namespace in the cluster:
@@ -147,7 +147,7 @@ _Note:_ This is helpful when you don't want to deploy the Loki Operator image ev
   kubectl -n openshift-logging apply -f hack/lokistack_dev.yaml
   ```
 
-* Now run the operator locally in your machine:
+* Now run the operator locally on your machine:
 
   ```console
   make run
