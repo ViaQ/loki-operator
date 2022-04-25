@@ -20,7 +20,7 @@ jobs:
       with:
         go-version: ${{ matrix.go }}
       id: go
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Lint
       uses: golangci/golangci-lint-action@v2
       with:
@@ -44,7 +44,7 @@ jobs:
       with:
         go-version: ${{ matrix.go }}
       id: go
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Build Manager
       run: |-
         make manager && git diff --exit-code
@@ -64,7 +64,7 @@ jobs:
       with:
         go-version: ${{ matrix.go }}
       id: go
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Build Broker
       run: |-
         make bin/loki-broker && git diff --exit-code
@@ -82,7 +82,7 @@ jobs:
       with:
         go-version: ${{ matrix.go }}
       id: go
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Run tests
       run: go test -coverprofile=profile.cov ./...
     - name: Send coverage
